@@ -13,17 +13,12 @@
     line-height: 1.5;
     min-height: 100vh;
   }
-  #header {
+  #app {
     position: relative;
-    padding: 20px 12px 10px;
-    min-height: 180px;
-  }
-  #main-row {
+    padding: 24px 12px 16px;
     display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    width: 100%;
-    position: relative;
+    flex-direction: column;
+    align-items: center;
   }
   #face {
     display: flex;
@@ -33,73 +28,72 @@
   }
   #eyes-wrap {
     display: flex;
-    gap: 28px;
+    gap: 32px;
     justify-content: center;
     align-items: center;
-    height: 100px;
+    height: 110px;
   }
   .eye {
-    width: 72px;
-    height: 72px;
+    width: 80px;
+    height: 80px;
     display: flex;
     align-items: center;
     justify-content: center;
   }
   .eye svg { width: 100%; height: 100%; }
   #mouth {
-    margin-top: 6px;
-    width: 90px;
-    height: 28px;
+    margin-top: 8px;
+    width: 100px;
+    height: 32px;
   }
   #mouth svg { width: 100%; height: 100%; }
-  #bubble {
+  #letter {
     position: absolute;
-    left: calc(100% + 48px);
-    top: -8px;
-    font-size: 26px;
+    left: calc(100% + 60px);
+    top: 8px;
+    font-size: 28px;
     font-weight: 700;
-    color: #777;
+    color: #888;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.12s;
-    white-space: nowrap;
-    text-shadow: 0 0 6px rgba(0,0,0,0.4);
+    transition: opacity 0.1s;
     transform: translateX(-50%);
     text-align: center;
+    text-shadow: 0 0 8px rgba(0,0,0,0.5);
   }
   #panel-toggle {
-    position: absolute;
-    top: 8px;
+    position: fixed;
+    top: 12px;
     right: 12px;
-    font-size: 12px;
-    padding: 4px 8px;
+    font-size: 13px;
+    padding: 6px 10px;
     border-radius: 6px;
     border: 1px solid #444;
     background: #111;
     color: #fff;
     cursor: pointer;
-    z-index: 10;
+    z-index: 20;
   }
   #controls {
     display: none;
-    position: absolute;
-    top: 40px;
+    position: fixed;
+    top: 48px;
     right: 12px;
     flex-direction: column;
-    gap: 6px;
-    background: rgba(0,0,0,0.72);
-    padding: 10px;
-    border-radius: 8px;
+    gap: 8px;
+    background: rgba(0,0,0,0.85);
+    padding: 12px;
+    border-radius: 10px;
     border: 1px solid #333;
-    font-size: 13px;
-    min-width: 200px;
-    z-index: 9;
+    font-size: 14px;
+    min-width: 220px;
+    z-index: 19;
   }
   #controls.open { display: flex; }
   button, select, input[type="text"], input[type="color"] {
     font-family: inherit;
-    font-size: 13px;
-    padding: 5px 8px;
+    font-size: 14px;
+    padding: 6px 10px;
     border-radius: 6px;
     border: 1px solid #444;
     background: #111;
@@ -107,150 +101,70 @@
   }
   button { cursor: pointer; }
   button:hover { background: #222; }
-  #hex { width: 76px; }
-  #msg { width: 160px; }
-  label { display: flex; align-items: center; gap: 4px; cursor: pointer; }
-  .content {
-    max-width: 680px;
-    margin: 0 auto;
-    padding: 10px 16px 60px;
-  }
-  h1 {
-    font-size: 2.4rem;
+  #hex { width: 90px; }
+  #msg { width: 180px; }
+  label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .info {
+    max-width: 640px;
+    margin: 40px auto 0;
+    padding: 0 16px 40px;
     text-align: center;
-    color: #fff;
-    margin: 0.5rem 0 0.2rem;
-    font-weight: 800;
   }
-  .subtitle {
-    text-align: center;
-    font-size: 1.1rem;
-    color: #aaa;
-    margin-bottom: 1.8rem;
-  }
-  h2 {
-    font-size: 1.5rem;
-    margin: 2rem 0 0.7rem;
-    color: #fff;
-  }
-  p { margin: 0.6rem 0 1rem; }
-  details {
-    background: rgba(255,255,255,0.04);
-    border: 1px solid #333;
-    border-radius: 8px;
-    margin: 0.45rem 0;
-    padding: 0.55rem 0.85rem;
-  }
-  summary {
-    cursor: pointer;
-    font-weight: 600;
-    color: #fff;
-    outline: none;
-  }
-  summary:hover { color: #00e5ff; }
-  details p { margin: 0.45rem 0 0.1rem; font-size: 0.95rem; }
+  h1 { font-size: 2.2rem; color: #fff; margin-bottom: 0.3rem; }
+  .tag { color: #aaa; margin-bottom: 1.5rem; }
   .footer {
-    margin-top: 3rem;
-    padding-top: 1.4rem;
-    border-top: 1px solid #333;
+    margin-top: 2rem;
     font-size: 0.85rem;
-    color: #888;
-    text-align: center;
+    color: #666;
   }
   .footer a { color: #00e5ff; text-decoration: none; }
-  .footer a:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
-<div id="header">
-  <button id="panel-toggle">Controls</button>
-  <div id="main-row">
-    <div id="face">
-      <div id="eyes-wrap">
-        <div class="eye" id="eyeL"></div>
-        <div class="eye" id="eyeR"></div>
-      </div>
-      <div id="mouth"></div>
-      <div id="bubble"></div>
+<button id="panel-toggle">Controls</button>
+<div id="app">
+  <div id="face">
+    <div id="eyes-wrap">
+      <div class="eye" id="eyeL"></div>
+      <div class="eye" id="eyeR"></div>
     </div>
-  </div>
-  <div id="controls">
-    <select id="shape">
-      <option value="vpill">Vertical pill</option>
-      <option value="hpill">Horizontal pill</option>
-      <option value="circle">Circle</option>
-      <option value="square">Square</option>
-      <option value="heart">Heart</option>
-      <option value="star">Star</option>
-    </select>
-    <select id="mouthSel">
-      <option value="smile" selected>Mouth: smile</option>
-      <option value="neutral">Mouth: neutral</option>
-      <option value="frown">Mouth: frown</option>
-      <option value="sneer">Mouth: sneer</option>
-      <option value="oh">Mouth: oh</option>
-    </select>
-    <div style="display:flex;gap:6px;align-items:center;">
-      <input type="color" id="color" value="#00e5ff">
-      <input type="text" id="hex" placeholder="#00e5ff" maxlength="7">
-    </div>
-    <label><input type="checkbox" id="hideLetter"> Hide letter</label>
-    <input type="text" id="msg" placeholder="Phrase (max 40)" maxlength="40">
-    <button id="flash">Flash once</button>
+    <div id="mouth"></div>
+    <div id="letter"></div>
   </div>
 </div>
 
-<div class="content">
+<div id="controls">
+  <select id="shape">
+    <option value="vpill">Vertical pill</option>
+    <option value="hpill">Horizontal pill</option>
+    <option value="circle">Circle</option>
+    <option value="square">Square</option>
+    <option value="heart">Heart</option>
+    <option value="star">Star</option>
+  </select>
+  <select id="mouthSel">
+    <option value="smile" selected>Mouth: smile</option>
+    <option value="neutral">Mouth: neutral</option>
+    <option value="frown">Mouth: frown</option>
+    <option value="sneer">Mouth: sneer</option>
+    <option value="oh">Mouth: oh</option>
+  </select>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <input type="color" id="color" value="#00e5ff">
+    <input type="text" id="hex" placeholder="#00e5ff" maxlength="7">
+  </div>
+  <label><input type="checkbox" id="hideLetter"> Hide letter</label>
+  <input type="text" id="msg" placeholder="Phrase (max 40)" maxlength="40">
+  <button id="flash">Flash once</button>
+</div>
+
+<div class="info">
   <h1>MORSE</h1>
-  <p class="subtitle">says it in a flash!<br>( so you don't have to spell it out )</p>
-
-  <p>Sometimes things need to be spelled out. Let Morse spell it out for you.<br>
-  You don’t have to say it! Morse says it in code.</p>
-
-  <h2>What Morse Does</h2>
-  <p>Type any short phrase (up to 40 characters) or pick a preset. Morse flashes it with his eyes — in the shape and color you choose. Leave the page open on your desk or phone and he’ll keep transmitting while you’re away.</p>
-
-  <h2>Sample Uses</h2>
-
-  <details>
-    <summary>Status & Boundaries</summary>
-    <p>On Break · Back Soon · Go Away · Do Not Disturb · In a Meeting · Lunch</p>
-  </details>
-
-  <details>
-    <summary>Playful / Sass</summary>
-    <p>Fuck Off · Not Now · I’m Not Cheap · Blame Morse · Silent Sass · Ask Again Later</p>
-  </details>
-
-  <details>
-    <summary>Seasonal & Social</summary>
-    <p>Merry Christmas · Happy Birthday · Welcome · Congrats · Good Luck</p>
-  </details>
-
-  <details>
-    <summary>Exaggerated Distress</summary>
-    <p>SOS (no, seriously, HELP) · Send Coffee · Save Me · Emergency: Boredom</p>
-  </details>
-
-  <details>
-    <summary>How the eyes work</summary>
-    <p>Choose from six eye shapes and any color. Optional letter display shows the current character to the side while Morse flashes. Mouth style can be set to smile, neutral, frown, sneer, or “oh.”</p>
-  </details>
-
-  <details>
-    <summary>Away-from-desk mode</summary>
-    <p>Leave Morse running full-screen or as a persistent tab. He loops your chosen phrase so the message stays visible even when you’ve stepped away.</p>
-  </details>
-
-  <h2>Add to Home Screen</h2>
-  <p>On your phone, open this page in the browser and choose “Add to Home Screen.” You’ll get an icon that launches Morse instantly — no app store, no download.</p>
-
+  <p class="tag">says it in a flash!<br>You don’t have to say it! Morse says it in code.</p>
+  <p>Type a phrase or leave Morse looping. He’ll flash it with his eyes.</p>
   <div class="footer">
-    <p>Morse is free and runs entirely in your browser.<br>
-    Created by <a href="https://omniquestmedia.com" target="_blank" rel="noopener">OmniQuest Media Inc.</a></p>
-    <p style="margin-top:1rem;">This is a novelty tool for entertainment and lighthearted signaling. It is not an emergency service, safety device, or substitute for professional help. Use at your own discretion.</p>
-    <p style="margin-top:0.8rem;"><a href="https://github.com/OmniQuestMedia/MORSE" target="_blank" rel="noopener">Source on GitHub</a></p>
-    <p style="margin-top:0.6rem; font-size:0.8rem;">© 2026 OmniQuest Media Inc. All rights reserved.</p>
+    Free novelty beacon by <a href="https://omniquestmedia.com" target="_blank" rel="noopener">OmniQuest Media Inc.</a><br>
+    <a href="https://github.com/OmniQuestMedia/MORSE" target="_blank" rel="noopener">Source</a> · Not for emergency use
   </div>
 </div>
 
@@ -267,7 +181,7 @@ const MORSE = {
 const eyeL = document.getElementById('eyeL');
 const eyeR = document.getElementById('eyeR');
 const mouthEl = document.getElementById('mouth');
-const bubble = document.getElementById('bubble');
+const letterEl = document.getElementById('letter');
 const shapeSel = document.getElementById('shape');
 const mouthSel = document.getElementById('mouthSel');
 const colorIn = document.getElementById('color');
@@ -279,7 +193,7 @@ const panelToggle = document.getElementById('panel-toggle');
 const controls = document.getElementById('controls');
 
 let currentColor = '#00e5ff';
-let unit = 120;
+let unit = 110;
 let idleTimer = null;
 let running = false;
 
@@ -345,15 +259,15 @@ async function flashChar(ch) {
   const code = MORSE[ch.toUpperCase()] || '';
   const show = !hideLetter.checked && ch !== ' ';
   if (show) {
-    bubble.textContent = ch.toUpperCase();
-    bubble.style.opacity = '1';
+    letterEl.textContent = ch.toUpperCase();
+    letterEl.style.opacity = '1';
   }
   for (const sym of code) {
     if (sym === '.') { setEyes(true); await sleep(unit); setEyes(false); await sleep(unit); }
     else if (sym === '-') { setEyes(true); await sleep(unit * 3); setEyes(false); await sleep(unit); }
     else if (sym === ' ') { await sleep(unit * 2); }
   }
-  bubble.style.opacity = '0';
+  letterEl.style.opacity = '0';
   await sleep(unit * 2);
 }
 
@@ -363,7 +277,7 @@ async function transmit(text) {
   stopIdle();
   const clean = text.slice(0, 40).toUpperCase();
   for (const ch of clean) await flashChar(ch);
-  await sleep(600);
+  await sleep(500);
   running = false;
   startIdle();
 }
@@ -379,11 +293,11 @@ async function idleLoop() {
     if (running) return;
     await flashChar(ch);
   }
-  await sleep(1500);
-  if (!running) idleTimer = setTimeout(idleLoop, 100);
+  await sleep(1400);
+  if (!running) idleTimer = setTimeout(idleLoop, 80);
 }
 
-function startIdle() { stopIdle(); idleIndex = 0; idleTimer = setTimeout(idleLoop, 400); }
+function startIdle() { stopIdle(); idleIndex = 0; idleTimer = setTimeout(idleLoop, 300); }
 function stopIdle() { if (idleTimer) clearTimeout(idleTimer); idleTimer = null; }
 
 flashBtn.addEventListener('click', () => { const t = msgIn.value.trim(); if (t) transmit(t); });
