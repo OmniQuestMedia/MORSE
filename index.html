@@ -112,11 +112,12 @@
     text-align: center;
   }
   h1 { font-size: 2.2rem; color: #fff; margin-bottom: 0.3rem; }
-  .tag { color: #aaa; margin-bottom: 1.5rem; }
+  .tag { color: #aaa; margin-bottom: 1.5rem; overflow-wrap: break-word; }
   .footer {
     margin-top: 2rem;
     font-size: 0.85rem;
     color: #666;
+    overflow-wrap: break-word;
   }
   .footer a { color: #00e5ff; text-decoration: none; }
   .privacy {
@@ -126,6 +127,13 @@
     max-width: 520px;
     margin-left: auto;
     margin-right: auto;
+    overflow-wrap: break-word;
+  }
+  #status {
+    margin-top: 8px;
+    font-size: 0.9rem;
+    color: #aaa;
+    min-height: 1.2em;
   }
 </style>
 </head>
@@ -143,6 +151,12 @@
 </div>
 
 <div id="controls">
+  <select id="mode">
+    <option value="idle" selected>Mode: Idle</option>
+    <option value="oneshot">Mode: One-shot</option>
+    <option value="learning">Mode: Learning</option>
+    <option value="receive">Mode: Receive</option>
+  </select>
   <select id="shape">
     <option value="vpill">Vertical pill</option>
     <option value="hpill">Horizontal pill</option>
@@ -164,7 +178,8 @@
   </div>
   <label><input type="checkbox" id="hideLetter"> Hide letter</label>
   <input type="text" id="msg" placeholder="Phrase (max 40)" maxlength="40">
-  <button id="flash">Flash once</button>
+  <button id="play">Play / Flash</button>
+  <div id="status"></div>
 </div>
 
 <div class="info">
@@ -200,14 +215,21 @@ const colorIn = document.getElementById('color');
 const hexIn = document.getElementById('hex');
 const hideLetter = document.getElementById('hideLetter');
 const msgIn = document.getElementById('msg');
-const flashBtn = document.getElementById('flash');
+const playBtn = document.getElementById('play');
 const panelToggle = document.getElementById('panel-toggle');
 const controls = document.getElementById('controls');
+const modeSel = document.getElementById('mode');
+const statusEl = document.getElementById('status');
 
 let currentColor = '#00e5ff';
 let unit = 110;
 let idleTimer = null;
 let running = false;
+let currentMode = 'idle';
+
+function setStatus(msg) {
+  statusEl.textContent = msg || '';
+}
 
 function drawShape(el, shape) {
   const c = currentColor;
@@ -288,37 +310,92 @@ async function transmit(text) {
   running = true;
   stopIdle();
   const clean = text.slice(0, 40).toUpperCase();
+  setStatus('Flashing...');
   for (const ch of clean) await flashChar(ch);
   await sleep(500);
   running = false;
-  startIdle();
+  setStatus('');
+  if (currentMode === 'idle') startIdle();
 }
 
 const idlePhrases = ["HI! I'M MORSE", "LET ME SAY IT!", "WELCOME"];
 let idleIndex = 0;
 
 async function idleLoop() {
-  if (running) return;
+  if (running || currentMode !== 'idle') return;
   const phrase = idlePhrases[idleIndex];
   idleIndex = (idleIndex + 1) % idlePhrases.length;
   for (const ch of phrase) {
-    if (running) return;
+    if (running || currentMode !== 'idle') return;
     await flashChar(ch);
   }
   await sleep(1400);
-  if (!running) idleTimer = setTimeout(idleLoop, 80);
+  if (!running && currentMode === 'idle') idleTimer = setTimeout(idleLoop, 80);
 }
 
 function startIdle() { stopIdle(); idleIndex = 0; idleTimer = setTimeout(idleLoop, 300); }
 function stopIdle() { if (idleTimer) clearTimeout(idleTimer); idleTimer = null; }
 
-flashBtn.addEventListener('click', () => { const t = msgIn.value.trim(); if (t) transmit(t); });
-msgIn.addEventListener('keydown', e => { if (e.key === 'Enter') { const t = msgIn.value.trim(); if (t) transmit(t); } });
+async function learningMode() {
+  if (running) return;
+  running = true;
+  stopIdle();
+  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const letter = letters[Math.floor(Math.random() * letters.length)];
+  setStatus(`Learning: ${letter} = ${MORSE[letter]}`);
+  await flashChar(letter);
+  await sleep(800);
+  running = false;
+  setStatus(`That was ${letter}. Code: ${MORSE[letter]}`);
+}
+
+async function receiveMode() {
+  setStatus('Receive mode: ready (basic placeholder — flash a known phrase to test)');
+  // Placeholder: user can still type and flash to practice decoding visually
+  // Full audio/camera decode can be added later
+}
+
+function setMode(mode) {
+  currentMode = mode;
+  stopIdle();
+  running = false;
+  setStatus('');
+  if (mode === 'idle') {
+    startIdle();
+    setStatus('Idle loop running');
+  } else if (mode === 'oneshot') {
+    setStatus('One-shot: type a phrase and press Play');
+  } else if (mode === 'learning') {
+    setStatus('Learning: press Play for a random letter');
+  } else if (mode === 'receive') {
+    receiveMode();
+  }
+}
+
+modeSel.addEventListener('change', () => setMode(modeSel.value));
+
+playBtn.addEventListener('click', () => {
+  if (currentMode === 'oneshot' || currentMode === 'idle') {
+    const t = msgIn.value.trim();
+    if (t) transmit(t);
+    else if (currentMode === 'idle') setStatus('Type a phrase or wait for idle');
+  } else if (currentMode === 'learning') {
+    learningMode();
+  } else if (currentMode === 'receive') {
+    const t = msgIn.value.trim();
+    if (t) transmit(t);
+    else setStatus('Type a phrase to flash for practice');
+  }
+});
+
+msgIn.addEventListener('keydown', e => {
+  if (e.key === 'Enter') playBtn.click();
+});
 
 updateColor('#00e5ff');
 drawMouth('smile');
 setEyes(false);
-startIdle();
+setMode('idle');
 </script>
 </body>
 </html>
