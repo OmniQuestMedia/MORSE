@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Morse — Say it in a flash!</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #000;
+    font-family: Helvetica, Arial, system-ui, sans-serif;
+    color: #e0e0e0;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+  #header {
+    position: relative;
+    padding: 20px 12px 10px;
+    min-height: 180px;
+  }
+  #main-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    width: 100%;
+    position: relative;
+  }
+  #face {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+  }
+  #eyes-wrap {
+    display: flex;
+    gap: 28px;
+    justify-content: center;
+    align-items: center;
+    height: 100px;
+  }
+  .eye {
+    width: 72px;
+    height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .eye svg { width: 100%; height: 100%; }
+  #mouth {
+    margin-top: 6px;
+    width: 90px;
+    height: 28px;
+  }
+  #mouth svg { width: 100%; height: 100%; }
+  #bubble {
+    position: absolute;
+    left: calc(100% + 48px);
+    top: -8px;
+    font-size: 26px;
+    font-weight: 700;
+    color: #777;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.12s;
+    white-space: nowrap;
+    text-shadow: 0 0 6px rgba(0,0,0,0.4);
+    transform: translateX(-50%);
+    text-align: center;
+  }
+  #panel-toggle {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1px solid #444;
+    background: #111;
+    color: #fff;
+    cursor: pointer;
+    z-index: 10;
+  }
+  #controls {
+    display: none;
+    position: absolute;
+    top: 40px;
+    right: 12px;
+    flex-direction: column;
+    gap: 6px;
+    background: rgba(0,0,0,0.72);
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #333;
+    font-size: 13px;
+    min-width: 200px;
+    z-index: 9;
+  }
+  #controls.open { display: flex; }
+  button, select, input[type="text"], input[type="color"] {
+    font-family: inherit;
+    font-size: 13px;
+    padding: 5px 8px;
+    border-radius: 6px;
+    border: 1px solid #444;
+    background: #111;
+    color: #fff;
+  }
+  button { cursor: pointer; }
+  button:hover { background: #222; }
+  #hex { width: 76px; }
+  #msg { width: 160px; }
+  label { display: flex; align-items: center; gap: 4px; cursor: pointer; }
+  .content {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 10px 16px 60px;
+  }
+  h1 {
+    font-size: 2.4rem;
+    text-align: center;
+    color: #fff;
+    margin: 0.5rem 0 0.2rem;
+    font-weight: 800;
+  }
+  .subtitle {
+    text-align: center;
+    font-size: 1.1rem;
+    color: #aaa;
+    margin-bottom: 1.8rem;
+  }
+  h2 {
+    font-size: 1.5rem;
+    margin: 2rem 0 0.7rem;
+    color: #fff;
+  }
+  p { margin: 0.6rem 0 1rem; }
+  details {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid #333;
+    border-radius: 8px;
+    margin: 0.45rem 0;
+    padding: 0.55rem 0.85rem;
+  }
+  summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: #fff;
+    outline: none;
+  }
+  summary:hover { color: #00e5ff; }
+  details p { margin: 0.45rem 0 0.1rem; font-size: 0.95rem; }
+  .footer {
+    margin-top: 3rem;
+    padding-top: 1.4rem;
+    border-top: 1px solid #333;
+    font-size: 0.85rem;
+    color: #888;
+    text-align: center;
+  }
+  .footer a { color: #00e5ff; text-decoration: none; }
+  .footer a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<div id="header">
+  <button id="panel-toggle">Controls</button>
+  <div id="main-row">
+    <div id="face">
+      <div id="eyes-wrap">
+        <div class="eye" id="eyeL"></div>
+        <div class="eye" id="eyeR"></div>
+      </div>
+      <div id="mouth"></div>
+      <div id="bubble"></div>
+    </div>
+  </div>
+  <div id="controls">
+    <select id="shape">
+      <option value="vpill">Vertical pill</option>
+      <option value="hpill">Horizontal pill</option>
+      <option value="circle">Circle</option>
+      <option value="square">Square</option>
+      <option value="heart">Heart</option>
+      <option value="star">Star</option>
+    </select>
+    <select id="mouthSel">
+      <option value="smile" selected>Mouth: smile</option>
+      <option value="neutral">Mouth: neutral</option>
+      <option value="frown">Mouth: frown</option>
+      <option value="sneer">Mouth: sneer</option>
+      <option value="oh">Mouth: oh</option>
+    </select>
+    <div style="display:flex;gap:6px;align-items:center;">
+      <input type="color" id="color" value="#00e5ff">
+      <input type="text" id="hex" placeholder="#00e5ff" maxlength="7">
+    </div>
+    <label><input type="checkbox" id="hideLetter"> Hide letter</label>
+    <input type="text" id="msg" placeholder="Phrase (max 40)" maxlength="40">
+    <button id="flash">Flash once</button>
+  </div>
+</div>
+
+<div class="content">
+  <h1>MORSE</h1>
+  <p class="subtitle">says it in a flash!<br>( so you don't have to spell it out )</p>
+
+  <p>Sometimes things need to be spelled out. Let Morse spell it out for you.<br>
+  You don’t have to say it! Morse says it in code.</p>
+
+  <h2>What Morse Does</h2>
+  <p>Type any short phrase (up to 40 characters) or pick a preset. Morse flashes it with his eyes — in the shape and color you choose. Leave the page open on your desk or phone and he’ll keep transmitting while you’re away.</p>
+
+  <h2>Sample Uses</h2>
+
+  <details>
+    <summary>Status & Boundaries</summary>
+    <p>On Break · Back Soon · Go Away · Do Not Disturb · In a Meeting · Lunch</p>
+  </details>
+
+  <details>
+    <summary>Playful / Sass</summary>
+    <p>Fuck Off · Not Now · I’m Not Cheap · Blame Morse · Silent Sass · Ask Again Later</p>
+  </details>
+
+  <details>
+    <summary>Seasonal & Social</summary>
+    <p>Merry Christmas · Happy Birthday · Welcome · Congrats · Good Luck</p>
+  </details>
+
+  <details>
+    <summary>Exaggerated Distress</summary>
+    <p>SOS (no, seriously, HELP) · Send Coffee · Save Me · Emergency: Boredom</p>
+  </details>
+
+  <details>
+    <summary>How the eyes work</summary>
+    <p>Choose from six eye shapes and any color. Optional letter display shows the current character to the side while Morse flashes. Mouth style can be set to smile, neutral, frown, sneer, or “oh.”</p>
+  </details>
+
+  <details>
+    <summary>Away-from-desk mode</summary>
+    <p>Leave Morse running full-screen or as a persistent tab. He loops your chosen phrase so the message stays visible even when you’ve stepped away.</p>
+  </details>
+
+  <h2>Add to Home Screen</h2>
+  <p>On your phone, open this page in the browser and choose “Add to Home Screen.” You’ll get an icon that launches Morse instantly — no app store, no download.</p>
+
+  <div class="footer">
+    <p>Morse is free and runs entirely in your browser.<br>
+    Created by <a href="https://omniquestmedia.com" target="_blank" rel="noopener">OmniQuest Media Inc.</a></p>
+    <p style="margin-top:1rem;">This is a novelty tool for entertainment and lighthearted signaling. It is not an emergency service, safety device, or substitute for professional help. Use at your own discretion.</p>
+    <p style="margin-top:0.8rem;"><a href="https://github.com/OmniQuestMedia/MORSE" target="_blank" rel="noopener">Source on GitHub</a></p>
+    <p style="margin-top:0.6rem; font-size:0.8rem;">© 2026 OmniQuest Media Inc. All rights reserved.</p>
+  </div>
+</div>
+
+<script>
+const MORSE = {
+  'A':'.-','B':'-...','C':'-.-.','D':'-..','E':'.','F':'..-.','G':'--.','H':'....',
+  'I':'..','J':'.---','K':'-.-','L':'.-..','M':'--','N':'-.','O':'---','P':'.--.',
+  'Q':'--.-','R':'.-.','S':'...','T':'-','U':'..-','V':'...-','W':'.--','X':'-..-',
+  'Y':'-.--','Z':'--..','0':'-----','1':'.----','2':'..---','3':'...--','4':'....-',
+  '5':'.....','6':'-....','7':'--...','8':'---..','9':'----.',
+  '.':'.-.-.-',',':'--..--','?':'..--..','!':'-.-.--',' ':' '
+};
+
+const eyeL = document.getElementById('eyeL');
+const eyeR = document.getElementById('eyeR');
+const mouthEl = document.getElementById('mouth');
+const bubble = document.getElementById('bubble');
+const shapeSel = document.getElementById('shape');
+const mouthSel = document.getElementById('mouthSel');
+const colorIn = document.getElementById('color');
+const hexIn = document.getElementById('hex');
+const hideLetter = document.getElementById('hideLetter');
+const msgIn = document.getElementById('msg');
+const flashBtn = document.getElementById('flash');
+const panelToggle = document.getElementById('panel-toggle');
+const controls = document.getElementById('controls');
+
+let currentColor = '#00e5ff';
+let unit = 120;
+let idleTimer = null;
+let running = false;
+
+function drawShape(el, shape) {
+  const c = currentColor;
+  let svg = '';
+  if (shape === 'vpill') svg = `<svg viewBox="0 0 60 90"><rect x="10" y="5" width="40" height="80" rx="20" fill="${c}"/></svg>`;
+  else if (shape === 'hpill') svg = `<svg viewBox="0 0 90 60"><rect x="5" y="10" width="80" height="40" rx="20" fill="${c}"/></svg>`;
+  else if (shape === 'circle') svg = `<svg viewBox="0 0 80 80"><circle cx="40" cy="40" r="32" fill="${c}"/></svg>`;
+  else if (shape === 'square') svg = `<svg viewBox="0 0 80 80"><rect x="12" y="12" width="56" height="56" rx="6" fill="${c}"/></svg>`;
+  else if (shape === 'heart') svg = `<svg viewBox="0 0 80 80"><path d="M40 68 C20 50 8 36 8 24 C8 14 16 8 26 8 C32 8 37 12 40 18 C43 12 48 8 54 8 C64 8 72 14 72 24 C72 36 60 50 40 68Z" fill="${c}"/></svg>`;
+  else if (shape === 'star') svg = `<svg viewBox="0 0 80 80"><polygon points="40,8 48,30 72,30 52,44 60,68 40,54 20,68 28,44 8,30 32,30" fill="${c}"/></svg>`;
+  el.innerHTML = svg;
+}
+
+function drawMouth(type) {
+  const c = currentColor;
+  let svg = '';
+  if (type === 'neutral') svg = `<svg viewBox="0 0 90 28"><line x1="15" y1="14" x2="75" y2="14" stroke="${c}" stroke-width="4" stroke-linecap="round"/></svg>`;
+  else if (type === 'smile') svg = `<svg viewBox="0 0 90 28"><path d="M18 10 Q45 26 72 10" fill="none" stroke="${c}" stroke-width="4" stroke-linecap="round"/></svg>`;
+  else if (type === 'frown') svg = `<svg viewBox="0 0 90 28"><path d="M18 18 Q45 4 72 18" fill="none" stroke="${c}" stroke-width="4" stroke-linecap="round"/></svg>`;
+  else if (type === 'sneer') svg = `<svg viewBox="0 0 90 28"><path d="M20 16 L70 8" fill="none" stroke="${c}" stroke-width="4" stroke-linecap="round"/></svg>`;
+  else if (type === 'oh') svg = `<svg viewBox="0 0 90 28"><ellipse cx="45" cy="14" rx="10" ry="9" fill="none" stroke="${c}" stroke-width="3.5"/></svg>`;
+  mouthEl.innerHTML = svg;
+}
+
+function setEyes(on) {
+  const shape = shapeSel.value;
+  if (on) {
+    drawShape(eyeL, shape);
+    drawShape(eyeR, shape);
+  } else {
+    eyeL.innerHTML = '';
+    eyeR.innerHTML = '';
+  }
+}
+
+function updateColor(c) {
+  currentColor = c;
+  colorIn.value = c;
+  hexIn.value = c;
+  if (eyeL.innerHTML) setEyes(true);
+  drawMouth(mouthSel.value);
+}
+
+colorIn.addEventListener('input', e => updateColor(e.target.value));
+hexIn.addEventListener('change', e => {
+  let v = e.target.value.trim();
+  if (!v.startsWith('#')) v = '#' + v;
+  if (/^#[0-9A-Fa-f]{6}$/.test(v)) updateColor(v);
+});
+shapeSel.addEventListener('change', () => { if (eyeL.innerHTML) setEyes(true); });
+mouthSel.addEventListener('change', () => drawMouth(mouthSel.value));
+
+panelToggle.addEventListener('click', () => {
+  controls.classList.toggle('open');
+  panelToggle.textContent = controls.classList.contains('open') ? 'Hide' : 'Controls';
+});
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function flashChar(ch) {
+  const code = MORSE[ch.toUpperCase()] || '';
+  const show = !hideLetter.checked && ch !== ' ';
+  if (show) {
+    bubble.textContent = ch.toUpperCase();
+    bubble.style.opacity = '1';
+  }
+  for (const sym of code) {
+    if (sym === '.') { setEyes(true); await sleep(unit); setEyes(false); await sleep(unit); }
+    else if (sym === '-') { setEyes(true); await sleep(unit * 3); setEyes(false); await sleep(unit); }
+    else if (sym === ' ') { await sleep(unit * 2); }
+  }
+  bubble.style.opacity = '0';
+  await sleep(unit * 2);
+}
+
+async function transmit(text) {
+  if (running) return;
+  running = true;
+  stopIdle();
+  const clean = text.slice(0, 40).toUpperCase();
+  for (const ch of clean) await flashChar(ch);
+  await sleep(600);
+  running = false;
+  startIdle();
+}
+
+const idlePhrases = ["HI! I'M MORSE", "LET ME SAY IT!", "WELCOME"];
+let idleIndex = 0;
+
+async function idleLoop() {
+  if (running) return;
+  const phrase = idlePhrases[idleIndex];
+  idleIndex = (idleIndex + 1) % idlePhrases.length;
+  for (const ch of phrase) {
+    if (running) return;
+    await flashChar(ch);
+  }
+  await sleep(1500);
+  if (!running) idleTimer = setTimeout(idleLoop, 100);
+}
+
+function startIdle() { stopIdle(); idleIndex = 0; idleTimer = setTimeout(idleLoop, 400); }
+function stopIdle() { if (idleTimer) clearTimeout(idleTimer); idleTimer = null; }
+
+flashBtn.addEventListener('click', () => { const t = msgIn.value.trim(); if (t) transmit(t); });
+msgIn.addEventListener('keydown', e => { if (e.key === 'Enter') { const t = msgIn.value.trim(); if (t) transmit(t); } });
+
+updateColor('#00e5ff');
+drawMouth('smile');
+setEyes(false);
+startIdle();
+</script>
+</body>
+</html>
