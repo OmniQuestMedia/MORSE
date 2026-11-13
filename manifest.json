@@ -1,0 +1,16 @@
+{
+  "name": "Morse — Say it in a flash!",
+  "short_name": "Morse",
+  "description": "A free novelty Morse beacon. Say it in a flash without saying a word.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "icon-512.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}
