@@ -316,12 +316,19 @@ function updateScore() {
   }
 }
 
+function resetScore() {
+  correctCount = 0;
+  wrongCount = 0;
+  updateScore();
+}
+
 function updateUIForMode(mode) {
   if (mode === 'learning') {
     challengeType.style.display = 'block';
     playBtn.textContent = currentChallenge ? 'Submit Guess' : 'Ready';
     againBtn.style.display = currentChallenge ? 'block' : 'none';
     msgIn.placeholder = "What's your guess?";
+    hideLetter.checked = true;
   } else if (mode === 'idle') {
     challengeType.style.display = 'none';
     againBtn.style.display = 'none';
@@ -585,6 +592,16 @@ function setMode(mode) {
 }
 
 modeSel.addEventListener('change', () => setMode(modeSel.value));
+
+challengeType.addEventListener('change', () => {
+  if (currentMode === 'learning') {
+    resetScore();
+    currentChallenge = null;
+    flashCount = 0;
+    updateUIForMode('learning');
+    setStatus('Type changed — score reset. Press Ready');
+  }
+});
 
 playBtn.addEventListener('click', () => {
   if (currentMode === 'oneshot' || currentMode === 'idle') {
