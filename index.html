@@ -92,6 +92,12 @@
     width: 100%;
     max-width: 320px;
   }
+  #hint {
+    font-size: 0.9rem;
+    color: #aaa;
+    text-align: center;
+    margin-bottom: 4px;
+  }
   #challenge-type {
     width: 100%;
     display: none;
@@ -228,6 +234,7 @@
       <option value="words8">Words under 8 letters</option>
       <option value="words12">Words under 12 letters</option>
     </select>
+    <div id="hint">Type a phrase or leave Morse looping. He’ll flash it with his eyes.</div>
     <input type="text" id="msg" placeholder="Type a phrase (max 40)" maxlength="40">
     <div id="morse-display"></div>
     <div id="button-row">
@@ -269,7 +276,6 @@
 </div>
 
 <div class="info">
-  <p>Type a phrase or leave Morse looping. He’ll flash it with his eyes.</p>
   <div class="footer">
     Free novelty beacon by <a href="https://omniquestmedia.com" target="_blank" rel="noopener">OmniQuest Media Inc.</a><br>
     <a href="https://github.com/OmniQuestMedia/MORSE" target="_blank" rel="noopener">Source</a> · Not for emergency use
