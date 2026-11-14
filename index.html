@@ -188,7 +188,7 @@
 
 <div id="controls">
   <select id="mode">
-    <option value="idle" selected>Mode: Idle</option>
+    <option value="idle" selected>Mode: Display Loop</option>
     <option value="oneshot">Mode: One-shot</option>
     <option value="learning">Mode: Learning</option>
     <option value="receive">Mode: Receive</option>
@@ -455,7 +455,7 @@ function setMode(mode) {
   updateUIForMode(mode);
   if (mode === 'idle') {
     startIdle();
-    setStatus('Idle loop running');
+    setStatus('Display Loop running');
   } else if (mode === 'oneshot') {
     setStatus('One-shot: type a phrase and press Play');
   } else if (mode === 'learning') {
@@ -471,7 +471,7 @@ playBtn.addEventListener('click', () => {
   if (currentMode === 'oneshot' || currentMode === 'idle') {
     const t = msgIn.value.trim();
     if (t) transmit(t);
-    else if (currentMode === 'idle') setStatus('Type a phrase or wait for idle');
+    else if (currentMode === 'idle') setStatus('Type a phrase or wait for display loop');
   } else if (currentMode === 'learning') {
     if (currentChallenge) checkGuess();
     else startLearningChallenge();
