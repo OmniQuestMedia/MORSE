@@ -275,7 +275,7 @@
     <div id="button-row">
       <button id="again">Again</button>
       <button id="play">Play / Flash</button>
-      <button id="downloadGif" style="display:none;flex:1;">Download GIF</button>
+      <button id="downloadGif" style="flex:1;">Send & Share (GIF)</button>
     </div>
     <div id="score"></div>
     <div id="learning-prompt">Learning: choose type and press Ready.</div>
@@ -329,7 +329,7 @@
     <input type="text" id="hex" placeholder="#00e5ff" maxlength="7">
   </div>
   <label><input type="checkbox" id="hideLetter"> Hide letter</label>
-  <a href="https://99604f81-1777-4796-9c27-f07a2413cac7.usrfiles.com/ugd/99604f_d362d9dffb224ae79e3e49ee164be687.pdf" target="_blank" rel="noopener" style="display:block;text-align:center;padding:8px 10px;border-radius:6px;border:1px solid #444;background:#111;color:#fff;text-decoration:none;font-weight:600;margin-top:4px;">User Manual</a>
+  <a href="https://github.com/OmniQuestMedia/MORSE/blob/main/MORSE%E2%84%A2_Learning_and_Use_Manual.pdf" target="_blank" rel="noopener" style="display:block;text-align:center;padding:8px 10px;border-radius:6px;border:1px solid #444;background:#111;color:#fff;text-decoration:none;font-weight:600;margin-top:4px;">User Manual</a>
 </div>
 
 <div class="info">
@@ -980,7 +980,7 @@ async function createGif(text) {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      downloadBtn.textContent = 'Download GIF';
+      downloadBtn.textContent = 'Send & Share (GIF)';
       downloadBtn.disabled = false;
       resolve();
     });
@@ -991,10 +991,6 @@ async function createGif(text) {
 downloadBtn.addEventListener('click', () => {
   const t = msgIn.value.trim();
   if (t) createGif(t);
-});
-
-msgIn.addEventListener('input', () => {
-  downloadBtn.style.display = msgIn.value.trim() ? 'inline-block' : 'none';
 });
 
 redraw();
