@@ -211,7 +211,6 @@
   }
   #score {
     font-size: 0.85rem;
-    color: #888;
     margin-top: 2px;
   }
 </style>
@@ -352,8 +351,10 @@ function setStatus(msg, reveal = false) {
 function updateScore() {
   if (currentMode === 'learning') {
     scoreEl.textContent = `Score: ${correctCount} correct, ${wrongCount} wrong`;
+    scoreEl.style.color = currentColor;
   } else {
     scoreEl.textContent = '';
+    scoreEl.style.color = '';
   }
 }
 
@@ -472,6 +473,9 @@ function updateColor(c) {
   drawMouth(mouthSel.value);
   if (statusEl.classList.contains('reveal')) {
     statusEl.style.color = c;
+  }
+  if (currentMode === 'learning') {
+    scoreEl.style.color = c;
   }
 }
 
