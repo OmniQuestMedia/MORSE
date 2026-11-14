@@ -258,6 +258,16 @@ function setStatus(msg) {
   statusEl.textContent = msg || '';
 }
 
+function updateUIForMode(mode) {
+  if (mode === 'learning') {
+    playBtn.textContent = 'Ready';
+    msgIn.placeholder = "What's your guess?";
+  } else {
+    playBtn.textContent = 'Play / Flash';
+    msgIn.placeholder = 'Type a phrase (max 40)';
+  }
+}
+
 function drawShape(el, shape) {
   const c = currentColor;
   let svg = '';
@@ -369,7 +379,7 @@ async function learningMode() {
   stopIdle();
   const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   const letter = letters[Math.floor(Math.random() * letters.length)];
-  setStatus(`Learning: ${letter} = ${MORSE[letter]}`);
+  setStatus(`Watch...`);
   await flashChar(letter);
   await sleep(800);
   running = false;
@@ -385,13 +395,14 @@ function setMode(mode) {
   stopIdle();
   running = false;
   setStatus('');
+  updateUIForMode(mode);
   if (mode === 'idle') {
     startIdle();
     setStatus('Idle loop running');
   } else if (mode === 'oneshot') {
     setStatus('One-shot: type a phrase and press Play');
   } else if (mode === 'learning') {
-    setStatus('Learning: press Play for a random letter');
+    setStatus('Learning: press Ready to see a letter');
   } else if (mode === 'receive') {
     receiveMode();
   }
