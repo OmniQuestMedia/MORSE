@@ -309,7 +309,8 @@ let correctCount = 0;
 let wrongCount = 0;
 let tapStart = 0;
 let tapBuffer = '';
-const SHORT_THRESHOLD = 200;
+let holdTimer = null;
+const SHORT_THRESHOLD = 450;
 
 function setStatus(msg, reveal = false) {
   statusEl.textContent = msg || '';
@@ -366,8 +367,8 @@ function updateUIForMode(mode) {
   updateScore();
 }
 
-function updateMorseDisplay() {
-  morseDisplay.textContent = tapBuffer || '';
+function updateMorseDisplay(preview = '') {
+  morseDisplay.textContent = (tapBuffer || '') + preview;
 }
 
 function clearTapBuffer() {
@@ -671,9 +672,14 @@ msgIn.addEventListener('keydown', e => {
 
 document.addEventListener('keydown', e => {
   if (currentMode !== 'learning' || !currentChallenge) return;
-  if (e.key === ' ' || e.key === 'Enter') {
+  if ((e.key === ' ' || e.key === 'Enter') && !tapStart) {
     e.preventDefault();
     tapStart = Date.now();
+    updateMorseDisplay('·');
+    if (holdTimer) clearTimeout(holdTimer);
+    holdTimer = setTimeout(() => {
+      if (tapStart) updateMorseDisplay('-');
+    }, SHORT_THRESHOLD);
   }
 });
 
@@ -685,6 +691,10 @@ document.addEventListener('keyup', e => {
     tapBuffer += symbol;
     updateMorseDisplay();
     tapStart = 0;
+    if (holdTimer) {
+      clearTimeout(holdTimer);
+      holdTimer = null;
+    }
   }
 });
 
