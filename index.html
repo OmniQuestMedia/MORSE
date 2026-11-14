@@ -312,6 +312,10 @@ function updateUIForMode(mode) {
     challengeType.style.display = 'none';
     playBtn.textContent = 'Display Loop';
     msgIn.placeholder = 'Type a phrase (max 40)';
+  } else if (mode === 'oneshot') {
+    challengeType.style.display = 'none';
+    playBtn.textContent = 'Display Code';
+    msgIn.placeholder = 'Type a phrase (max 40)';
   } else {
     challengeType.style.display = 'none';
     playBtn.textContent = 'Play / Flash';
@@ -535,7 +539,7 @@ function setMode(mode) {
     startIdle();
     setStatus('Display Loop running');
   } else if (mode === 'oneshot') {
-    setStatus('One-shot: type a phrase and press Play');
+    setStatus('One-shot: type a phrase and press Display Code');
   } else if (mode === 'learning') {
     setStatus('Learning: choose type and press Ready');
   } else if (mode === 'receive') {
