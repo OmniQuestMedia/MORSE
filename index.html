@@ -932,17 +932,22 @@ function drawEyesToCanvas(ctx, w, h, on) {
 
 async function createGif(text) {
   if (!text || !text.trim()) return;
-  downloadBtn.textContent = 'Creating…';
+  downloadBtn.textContent = 'Starting…';
   downloadBtn.disabled = true;
 
+  const timeout = setTimeout(() => {
+    downloadBtn.textContent = 'Timed out – try shorter phrase';
+    downloadBtn.disabled = false;
+  }, 15000);
+
   const canvas = document.createElement('canvas');
-  canvas.width = 320;
-  canvas.height = 180;
+  canvas.width = 280;
+  canvas.height = 160;
   const ctx = canvas.getContext('2d');
 
   const gif = new GIF({
-    workers: 2,
-    quality: 12,
+    workers: 1,
+    quality: 20,
     width: canvas.width,
     height: canvas.height,
     workerScript: 'https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js'
@@ -971,7 +976,7 @@ async function createGif(text) {
   }
 
   return new Promise((resolve) => {
-    gif.on('finished', (blob) => {
+    gif.on('finished', (blob) => { clearTimeout(timeout);
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
