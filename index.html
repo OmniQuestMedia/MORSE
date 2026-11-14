@@ -72,17 +72,23 @@
   #mouth svg { width: 100%; height: 100%; }
   #letter {
     position: absolute;
-    left: calc(100% + 60px);
-    top: 8px;
-    font-size: 28px;
+    left: calc(100% + 56px);
+    top: 6px;
+    width: 56px;
+    height: 44px;
+    background: #ffffff;
+    color: #000;
+    font-size: 26px;
     font-weight: 700;
-    color: #888;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.1s;
     transform: translateX(-50%);
-    text-align: center;
-    text-shadow: 0 0 8px rgba(0,0,0,0.5);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
   }
   #input-row {
     margin-top: 28px;
@@ -640,24 +646,37 @@ async function playSymbol(sym) {
   await sleep(unit);
 }
 
-async function playMorse(morse) {
+async function playMorse(morse, originalText) {
   if (running) return;
   running = true;
   eyeL.style.opacity = 0.15;
   eyeR.style.opacity = 0.15;
   const parts = morse.split(' ');
+  let charIndex = 0;
+  const clean = (originalText || '').toUpperCase();
   for (const part of parts) {
     if (!running) break;
     if (part === '/') {
+      letterEl.style.opacity = '0';
       await sleep(unit * 4);
       continue;
+    }
+    const ch = clean[charIndex] || '';
+    if (ch && ch !== ' ' && !hideLetter.checked) {
+      letterEl.textContent = ch;
+      letterEl.style.opacity = '1';
+    } else {
+      letterEl.style.opacity = '0';
     }
     for (const sym of part) {
       if (!running) break;
       await playSymbol(sym);
     }
+    letterEl.style.opacity = '0';
     await sleep(unit * 2);
+    charIndex++;
   }
+  letterEl.style.opacity = '0';
   eyeL.style.opacity = 1;
   eyeR.style.opacity = 1;
   running = false;
@@ -672,7 +691,7 @@ function startIdle() {
     const phrase = phrases[i % phrases.length];
     i++;
     const morse = textToMorse(phrase);
-    playMorse(morse).then(() => {
+    playMorse(morse, phrase).then(() => {
       if (currentMode === 'idle') idleTimer = setTimeout(loop, 2000);
     });
   }
@@ -711,7 +730,7 @@ function startChallenge() {
   const morse = textToMorse(currentChallenge);
   morseDisplay.textContent = morse;
   flashCount = 0;
-  playMorse(morse);
+  playMorse(morse, currentChallenge);
   playBtn.textContent = 'Submit Guess';
   againBtn.style.display = 'block';
   setStatus('Listen and guess...');
@@ -836,10 +855,10 @@ playBtn.addEventListener('click', () => {
     if (!text) return;
     const morse = textToMorse(text);
     if (currentMode === 'oneshot') {
-      playMorse(morse);
+      playMorse(morse, text);
     } else {
       stopIdle();
-      playMorse(morse).then(() => {
+      playMorse(morse, text).then(() => {
         if (currentMode === 'idle') startIdle();
       });
     }
@@ -849,7 +868,7 @@ playBtn.addEventListener('click', () => {
 againBtn.addEventListener('click', () => {
   if (currentMode === 'learning' && currentChallenge) {
     const morse = textToMorse(currentChallenge);
-    playMorse(morse);
+    playMorse(morse, currentChallenge);
   } else if ((currentMode === 'sendquiz' || currentMode === 'copy') && currentChallenge) {
     clearTapBuffer();
     setStatus('Try again');
