@@ -18,7 +18,7 @@
   }
   #app {
     position: relative;
-    padding: 12vh 12px 16px;
+    padding: 6vh 12px 16px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -26,12 +26,27 @@
     flex: 1;
     min-height: 50vh;
   }
+  #tagline {
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  #tagline .top {
+    font-size: 1.1rem;
+    color: #aaa;
+    margin-bottom: 4px;
+  }
+  #tagline .main {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.1;
+  }
   #face {
     display: flex;
     flex-direction: column;
     align-items: center;
     position: relative;
-    margin-top: 4vh;
+    margin-top: 2vh;
   }
   #eyes-wrap {
     display: flex;
@@ -157,8 +172,6 @@
     padding: 0 16px 40px;
     text-align: center;
   }
-  h1 { font-size: 2.2rem; color: #fff; margin-bottom: 0.3rem; }
-  .tag { color: #aaa; margin-bottom: 1.5rem; overflow-wrap: break-word; }
   .footer {
     margin-top: 2rem;
     font-size: 0.85rem;
@@ -196,6 +209,10 @@
 <body>
 <button id="panel-toggle">Controls</button>
 <div id="app">
+  <div id="tagline">
+    <div class="top">You Don't Have To Say It</div>
+    <div class="main">MORSE Says It In Code</div>
+  </div>
   <div id="face">
     <div id="eyes-wrap">
       <div class="eye" id="eyeL"></div>
@@ -252,8 +269,6 @@
 </div>
 
 <div class="info">
-  <h1>MORSE</h1>
-  <p class="tag">says it in a flash!<br>You don’t have to say it! Morse says it in code.</p>
   <p>Type a phrase or leave Morse looping. He’ll flash it with his eyes.</p>
   <div class="footer">
     Free novelty beacon by <a href="https://omniquestmedia.com" target="_blank" rel="noopener">OmniQuest Media Inc.</a><br>
