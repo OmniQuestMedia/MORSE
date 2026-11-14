@@ -336,8 +336,8 @@ function drawFeedback(el, type) {
   }
 }
 
-function drawMouth(type) {
-  const c = currentColor;
+function drawMouth(type, color) {
+  const c = color || currentColor;
   let svg = '';
   if (type === 'neutral') svg = `<svg viewBox="0 0 90 28"><line x1="15" y1="14" x2="75" y2="14" stroke="${c}" stroke-width="4" stroke-linecap="round"/></svg>`;
   else if (type === 'smile') svg = `<svg viewBox="0 0 90 28"><path d="M18 10 Q45 26 72 10" fill="none" stroke="${c}" stroke-width="4" stroke-linecap="round"/></svg>`;
@@ -360,16 +360,18 @@ function setEyes(on) {
 
 async function showFeedback(correct) {
   const type = correct ? 'check' : 'x';
+  const feedbackColor = correct ? '#00ff66' : '#ff4444';
   drawFeedback(eyeL, type);
   drawFeedback(eyeR, type);
+  let mouthType = mouthSel.value;
   if (!correct) {
     const mouths = ['neutral', 'frown', 'sneer'];
-    const randomMouth = mouths[Math.floor(Math.random() * mouths.length)];
-    drawMouth(randomMouth);
+    mouthType = mouths[Math.floor(Math.random() * mouths.length)];
   }
+  drawMouth(mouthType, feedbackColor);
   await sleep(1200);
   setEyes(false);
-  if (!correct) drawMouth(mouthSel.value);
+  drawMouth(mouthSel.value);
 }
 
 function updateColor(c) {
