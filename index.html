@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Morse — Say it in a flash!</title>
-<script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gifshot@0.4.5/dist/gifshot.min.js"></script>
 <link rel="manifest" href="manifest.json">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -938,58 +938,61 @@ async function createGif(text) {
   const timeout = setTimeout(() => {
     downloadBtn.textContent = 'Timed out – try shorter phrase';
     downloadBtn.disabled = false;
-  }, 15000);
+  }, 20000);
 
   const canvas = document.createElement('canvas');
   canvas.width = 280;
   canvas.height = 160;
   const ctx = canvas.getContext('2d');
 
-  const gif = new GIF({
-    workers: 1,
-    quality: 20,
-    width: canvas.width,
-    height: canvas.height,
-    workerScript: 'https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js'
-  });
-
   const clean = text.slice(0, 40).toUpperCase();
   const unitMs = 110;
+  const frames = [];
+
+  function addFrame(on) {
+    drawEyesToCanvas(ctx, canvas.width, canvas.height, on);
+    frames.push(canvas.toDataURL('image/png'));
+  }
 
   for (const ch of clean) {
     const code = MORSE[ch] || '';
     for (const sym of code) {
       if (sym === '.') {
-        drawEyesToCanvas(ctx, canvas.width, canvas.height, true);
-        gif.addFrame(ctx, { delay: unitMs, copy: true });
-        drawEyesToCanvas(ctx, canvas.width, canvas.height, false);
-        gif.addFrame(ctx, { delay: unitMs, copy: true });
+        addFrame(true);
+        addFrame(false);
       } else if (sym === '-') {
-        drawEyesToCanvas(ctx, canvas.width, canvas.height, true);
-        gif.addFrame(ctx, { delay: unitMs * 3, copy: true });
-        drawEyesToCanvas(ctx, canvas.width, canvas.height, false);
-        gif.addFrame(ctx, { delay: unitMs, copy: true });
+        addFrame(true);
+        addFrame(true);
+        addFrame(true);
+        addFrame(false);
       }
     }
-    drawEyesToCanvas(ctx, canvas.width, canvas.height, false);
-    gif.addFrame(ctx, { delay: unitMs * 2, copy: true });
+    addFrame(false);
+    addFrame(false);
   }
 
-  return new Promise((resolve) => {
-    gif.on('finished', (blob) => { clearTimeout(timeout);
-      const url = URL.createObjectURL(blob);
+  gifshot.createGIF({
+    images: frames,
+    interval: unitMs / 1000,
+    gifWidth: canvas.width,
+    gifHeight: canvas.height,
+    sampleInterval: 10,
+    numWorkers: 1
+  }, function (obj) {
+    clearTimeout(timeout);
+    if (!obj.error) {
       const a = document.createElement('a');
-      a.href = url;
+      a.href = obj.image;
       a.download = 'morse-' + clean.replace(/[^A-Z0-9]+/g, '-') + '.gif';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      URL.revokeObjectURL(url);
       downloadBtn.textContent = 'Send & Share (GIF)';
       downloadBtn.disabled = false;
-      resolve();
-    });
-    gif.render();
+    } else {
+      downloadBtn.textContent = 'Error – try shorter';
+      downloadBtn.disabled = false;
+    }
   });
 }
 
