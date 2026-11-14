@@ -77,6 +77,10 @@
     width: 100%;
     max-width: 320px;
   }
+  #challenge-type {
+    width: 100%;
+    display: none;
+  }
   #msg {
     width: 100%;
     font-size: 16px;
@@ -184,6 +188,12 @@
     <div id="letter"></div>
   </div>
   <div id="input-row">
+    <select id="challenge-type">
+      <option value="letters" selected>Letters & Numbers</option>
+      <option value="words5">Words under 5 letters</option>
+      <option value="words8">Words under 8 letters</option>
+      <option value="words12">Words under 12 letters</option>
+    </select>
     <input type="text" id="msg" placeholder="Type a phrase (max 40)" maxlength="40">
     <button id="play">Play / Flash</button>
     <div id="status"></div>
@@ -243,6 +253,10 @@ const MORSE = {
   '.':'.-.-.-',',':'--..--','?':'..--..','!':'-.-.--',' ':' '
 };
 
+const WORDS5 = ['CAT','DOG','SUN','MOON','STAR','TREE','BOOK','BALL','FISH','BIRD','CAKE','RAIN','SNOW','WIND','FIRE','ROCK','LAKE','HILL','PATH','GATE'];
+const WORDS8 = ['FRIEND','HAPPY','SMILE','LIGHT','WATER','CLOUD','MUSIC','DANCE','GREEN','YELLOW','ORANGE','PURPLE','SILVER','GOLDEN','SIMPLE','QUICK','BRAVE','KIND','SMART','CALM'];
+const WORDS12 = ['SUNSHINE','RAINBOW','MOUNTAIN','BUTTERFLY','ADVENTURE','BEAUTIFUL','WONDERFUL','HAPPINESS','FRIENDSHIP','CHALLENGE','DISCOVERY','EXPLORER'];
+
 const eyeL = document.getElementById('eyeL');
 const eyeR = document.getElementById('eyeR');
 const mouthEl = document.getElementById('mouth');
@@ -259,6 +273,7 @@ const controls = document.getElementById('controls');
 const modeSel = document.getElementById('mode');
 const statusEl = document.getElementById('status');
 const scoreEl = document.getElementById('score');
+const challengeType = document.getElementById('challenge-type');
 
 let currentColor = '#00e5ff';
 let unit = 110;
@@ -290,9 +305,11 @@ function updateScore() {
 
 function updateUIForMode(mode) {
   if (mode === 'learning') {
+    challengeType.style.display = 'block';
     playBtn.textContent = currentChallenge ? 'Submit Guess' : 'Ready';
     msgIn.placeholder = "What's your guess?";
   } else {
+    challengeType.style.display = 'none';
     playBtn.textContent = 'Play / Flash';
     msgIn.placeholder = 'Type a phrase (max 40)';
   }
@@ -398,6 +415,12 @@ async function flashChar(ch) {
   await sleep(unit * 2);
 }
 
+async function flashWord(word) {
+  for (const ch of word) {
+    await flashChar(ch);
+  }
+}
+
 async function transmit(text) {
   if (running) return;
   running = true;
@@ -429,14 +452,32 @@ async function idleLoop() {
 function startIdle() { stopIdle(); idleIndex = 0; idleTimer = setTimeout(idleLoop, 300); }
 function stopIdle() { if (idleTimer) clearTimeout(idleTimer); idleTimer = null; }
 
+function pickChallenge() {
+  const type = challengeType.value;
+  if (type === 'letters') {
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    return letters[Math.floor(Math.random() * letters.length)];
+  } else if (type === 'words5') {
+    return WORDS5[Math.floor(Math.random() * WORDS5.length)];
+  } else if (type === 'words8') {
+    return WORDS8[Math.floor(Math.random() * WORDS8.length)];
+  } else if (type === 'words12') {
+    return WORDS12[Math.floor(Math.random() * WORDS12.length)];
+  }
+  return 'A';
+}
+
 async function startLearningChallenge() {
   if (running) return;
   running = true;
   stopIdle();
-  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  currentChallenge = letters[Math.floor(Math.random() * letters.length)];
+  currentChallenge = pickChallenge();
   setStatus('Watch...');
-  await flashChar(currentChallenge);
+  if (currentChallenge.length === 1) {
+    await flashChar(currentChallenge);
+  } else {
+    await flashWord(currentChallenge);
+  }
   await sleep(400);
   running = false;
   setStatus('What was it?');
@@ -454,11 +495,16 @@ async function checkGuess() {
   const correct = guess === currentChallenge;
   if (correct) correctCount++; else wrongCount++;
   await showFeedback(correct);
-  const code = MORSE[currentChallenge] || '';
   if (correct) {
     setStatus('Correct!', true);
   } else {
-    setStatus(`That was ${currentChallenge}. Code: ${code}`, true);
+    let codeDisplay = '';
+    if (currentChallenge.length === 1) {
+      codeDisplay = MORSE[currentChallenge] || '';
+    } else {
+      codeDisplay = currentChallenge.split('').map(c => MORSE[c] || '').join(' ');
+    }
+    setStatus(`That was ${currentChallenge}. Code: ${codeDisplay}`, true);
   }
   updateScore();
   msgIn.value = '';
@@ -485,7 +531,7 @@ function setMode(mode) {
   } else if (mode === 'oneshot') {
     setStatus('One-shot: type a phrase and press Play');
   } else if (mode === 'learning') {
-    setStatus('Learning: press Ready to start');
+    setStatus('Learning: choose type and press Ready');
   } else if (mode === 'receive') {
     receiveMode();
   }
