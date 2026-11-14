@@ -333,8 +333,14 @@ async function showFeedback(correct) {
   const type = correct ? 'check' : 'x';
   drawFeedback(eyeL, type);
   drawFeedback(eyeR, type);
+  if (!correct) {
+    const mouths = ['neutral', 'frown', 'sneer'];
+    const randomMouth = mouths[Math.floor(Math.random() * mouths.length)];
+    drawMouth(randomMouth);
+  }
   await sleep(1200);
   setEyes(false);
+  if (!correct) drawMouth(mouthSel.value);
 }
 
 function updateColor(c) {
