@@ -102,6 +102,7 @@
   #challenge-type {
     width: 100%;
     display: none;
+    margin-top: 6px;
   }
   #msg {
     width: 100%;
@@ -229,12 +230,6 @@
     <div id="letter"></div>
   </div>
   <div id="input-row">
-    <select id="challenge-type">
-      <option value="letters" selected>Letters & Numbers</option>
-      <option value="words5">Words under 5 letters</option>
-      <option value="words8">Words under 8 letters</option>
-      <option value="words12">Words under 12 letters</option>
-    </select>
     <div id="hint">Type a phrase or leave Morse looping.<br>He’ll flash it with his eyes.</div>
     <div id="morse-display"></div>
     <input type="text" id="msg" placeholder="Type a phrase (max 40)" maxlength="40">
@@ -244,6 +239,12 @@
     </div>
     <div id="status"></div>
     <div id="score"></div>
+    <select id="challenge-type">
+      <option value="letters" selected>Letters & Numbers</option>
+      <option value="words5">Words under 5 letters</option>
+      <option value="words8">Words under 8 letters</option>
+      <option value="words12">Words under 12 letters</option>
+    </select>
   </div>
 </div>
 
