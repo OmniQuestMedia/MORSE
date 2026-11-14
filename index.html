@@ -213,6 +213,14 @@
     font-size: 0.85rem;
     margin-top: 2px;
   }
+  #learning-prompt {
+    font-size: 0.9rem;
+    color: #aaa;
+    text-align: center;
+    width: 100%;
+    display: none;
+    margin-top: 4px;
+  }
 </style>
 </head>
 <body>
@@ -240,6 +248,7 @@
       <button id="play">Play / Flash</button>
     </div>
     <div id="score"></div>
+    <div id="learning-prompt">Learning: choose type and press Ready</div>
     <select id="challenge-type">
       <option value="letters" selected>Letters & Numbers</option>
       <option value="words5">Words under 5 letters</option>
@@ -322,6 +331,7 @@ const statusEl = document.getElementById('status');
 const scoreEl = document.getElementById('score');
 const challengeType = document.getElementById('challenge-type');
 const hintEl = document.getElementById('hint');
+const learningPrompt = document.getElementById('learning-prompt');
 
 let currentColor = '#00e5ff';
 let unit = 110;
@@ -369,6 +379,7 @@ function updateUIForMode(mode) {
     challengeType.style.display = 'block';
     morseDisplay.style.display = 'block';
     hintEl.style.display = 'none';
+    learningPrompt.style.display = 'block';
     playBtn.textContent = currentChallenge ? 'Submit Guess' : 'Ready';
     againBtn.style.display = currentChallenge ? 'block' : 'none';
     msgIn.placeholder = "What's your guess? (or tap Space/Enter)";
@@ -378,6 +389,7 @@ function updateUIForMode(mode) {
     morseDisplay.style.display = 'none';
     againBtn.style.display = 'none';
     hintEl.style.display = 'block';
+    learningPrompt.style.display = 'none';
     playBtn.textContent = 'Display Loop';
     msgIn.placeholder = 'Type a phrase (max 40)';
   } else if (mode === 'oneshot') {
@@ -385,6 +397,7 @@ function updateUIForMode(mode) {
     morseDisplay.style.display = 'none';
     againBtn.style.display = 'none';
     hintEl.style.display = 'block';
+    learningPrompt.style.display = 'none';
     playBtn.textContent = 'Display Code';
     msgIn.placeholder = 'Type a phrase (max 40)';
   } else {
@@ -392,6 +405,7 @@ function updateUIForMode(mode) {
     morseDisplay.style.display = 'none';
     againBtn.style.display = 'none';
     hintEl.style.display = 'block';
+    learningPrompt.style.display = 'none';
     playBtn.textContent = 'Play / Flash';
     msgIn.placeholder = 'Type a phrase (max 40)';
   }
@@ -660,7 +674,7 @@ function setMode(mode) {
   } else if (mode === 'oneshot') {
     setStatus('Type a phrase, display it once.');
   } else if (mode === 'learning') {
-    setStatus('Learning: choose type and press Ready');
+    setStatus('');
   } else if (mode === 'receive') {
     receiveMode();
   }
