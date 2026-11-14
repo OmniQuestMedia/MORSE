@@ -209,6 +209,9 @@
     font-size: 16px;
     font-weight: 600;
   }
+  #status.mode-desc {
+    color: var(--mode-color, #aaa);
+  }
   #score {
     font-size: 0.85rem;
     margin-top: 2px;
@@ -248,7 +251,7 @@
       <button id="play">Play / Flash</button>
     </div>
     <div id="score"></div>
-    <div id="learning-prompt">Learning: choose type and press Ready</div>
+    <div id="learning-prompt">Learning: choose type and press Ready.</div>
     <select id="challenge-type">
       <option value="letters" selected>Letters & Numbers</option>
       <option value="words5">Words under 5 letters</option>
@@ -263,7 +266,6 @@
     <option value="idle" selected>Mode: Display Loop</option>
     <option value="oneshot">Mode: One-shot</option>
     <option value="learning">Mode: Learning</option>
-    <option value="receive">Mode: Receive</option>
   </select>
   <select id="shape">
     <option value="vpill">Vertical pill</option>
@@ -349,13 +351,20 @@ const SHORT_THRESHOLD = 450;
 
 function setStatus(msg, reveal = false) {
   statusEl.textContent = msg || '';
+  statusEl.classList.remove('reveal', 'mode-desc');
   if (reveal) {
     statusEl.classList.add('reveal');
     statusEl.style.color = currentColor;
   } else {
-    statusEl.classList.remove('reveal');
     statusEl.style.color = '';
   }
+}
+
+function setModeDescription(msg) {
+  statusEl.textContent = msg;
+  statusEl.classList.remove('reveal');
+  statusEl.classList.add('mode-desc');
+  statusEl.style.color = currentColor;
 }
 
 function updateScore() {
@@ -380,6 +389,7 @@ function updateUIForMode(mode) {
     morseDisplay.style.display = 'block';
     hintEl.style.display = 'none';
     learningPrompt.style.display = 'block';
+    learningPrompt.style.color = currentColor;
     playBtn.textContent = currentChallenge ? 'Submit Guess' : 'Ready';
     againBtn.style.display = currentChallenge ? 'block' : 'none';
     msgIn.placeholder = "What's your guess? (or tap Space/Enter)";
@@ -485,11 +495,12 @@ function updateColor(c) {
   hexIn.value = c;
   if (eyeL.innerHTML && !currentChallenge) setEyes(true);
   drawMouth(mouthSel.value);
-  if (statusEl.classList.contains('reveal')) {
+  if (statusEl.classList.contains('reveal') || statusEl.classList.contains('mode-desc')) {
     statusEl.style.color = c;
   }
   if (currentMode === 'learning') {
     scoreEl.style.color = c;
+    learningPrompt.style.color = c;
   }
 }
 
@@ -655,10 +666,6 @@ async function checkGuess() {
   setTimeout(() => setStatus('Press Ready For Next Guess'), 2500);
 }
 
-async function receiveMode() {
-  setStatus('Receive mode: ready (basic placeholder — flash a known phrase to test)');
-}
-
 function setMode(mode) {
   currentMode = mode;
   stopIdle();
@@ -670,13 +677,11 @@ function setMode(mode) {
   updateUIForMode(mode);
   if (mode === 'idle') {
     startIdle();
-    setStatus('Type a phrase, display repeats.');
+    setModeDescription('Type a phrase, code display repeats.');
   } else if (mode === 'oneshot') {
-    setStatus('Type a phrase, display it once.');
+    setModeDescription('Type a phrase, code displays once.');
   } else if (mode === 'learning') {
     setStatus('');
-  } else if (mode === 'receive') {
-    receiveMode();
   }
 }
 
@@ -701,10 +706,6 @@ playBtn.addEventListener('click', () => {
   } else if (currentMode === 'learning') {
     if (currentChallenge) checkGuess();
     else startLearningChallenge();
-  } else if (currentMode === 'receive') {
-    const t = msgIn.value.trim();
-    if (t) transmit(t);
-    else setStatus('Type a phrase to flash for practice');
   }
 });
 
