@@ -86,11 +86,19 @@
     font-size: 16px;
     padding: 10px 12px;
   }
-  #play {
+  #button-row {
+    display: flex;
     width: 100%;
+    gap: 8px;
+  }
+  #play, #again {
+    flex: 1;
     padding: 10px;
     font-size: 16px;
     font-weight: 600;
+  }
+  #again {
+    display: none;
   }
   #panel-toggle {
     position: fixed;
@@ -195,7 +203,10 @@
       <option value="words12">Words under 12 letters</option>
     </select>
     <input type="text" id="msg" placeholder="Type a phrase (max 40)" maxlength="40">
-    <button id="play">Play / Flash</button>
+    <div id="button-row">
+      <button id="again">Again</button>
+      <button id="play">Play / Flash</button>
+    </div>
     <div id="status"></div>
     <div id="score"></div>
   </div>
@@ -268,6 +279,7 @@ const hexIn = document.getElementById('hex');
 const hideLetter = document.getElementById('hideLetter');
 const msgIn = document.getElementById('msg');
 const playBtn = document.getElementById('play');
+const againBtn = document.getElementById('again');
 const panelToggle = document.getElementById('panel-toggle');
 const controls = document.getElementById('controls');
 const modeSel = document.getElementById('mode');
@@ -281,6 +293,7 @@ let idleTimer = null;
 let running = false;
 let currentMode = 'idle';
 let currentChallenge = null;
+let flashCount = 0;
 let correctCount = 0;
 let wrongCount = 0;
 
@@ -307,17 +320,21 @@ function updateUIForMode(mode) {
   if (mode === 'learning') {
     challengeType.style.display = 'block';
     playBtn.textContent = currentChallenge ? 'Submit Guess' : 'Ready';
+    againBtn.style.display = currentChallenge ? 'block' : 'none';
     msgIn.placeholder = "What's your guess?";
   } else if (mode === 'idle') {
     challengeType.style.display = 'none';
+    againBtn.style.display = 'none';
     playBtn.textContent = 'Display Loop';
     msgIn.placeholder = 'Type a phrase (max 40)';
   } else if (mode === 'oneshot') {
     challengeType.style.display = 'none';
+    againBtn.style.display = 'none';
     playBtn.textContent = 'Display Code';
     msgIn.placeholder = 'Type a phrase (max 40)';
   } else {
     challengeType.style.display = 'none';
+    againBtn.style.display = 'none';
     playBtn.textContent = 'Play / Flash';
     msgIn.placeholder = 'Type a phrase (max 40)';
   }
@@ -477,20 +494,38 @@ function pickChallenge() {
   return 'A';
 }
 
-async function startLearningChallenge() {
-  if (running) return;
-  running = true;
-  stopIdle();
-  currentChallenge = pickChallenge();
-  setStatus('Watch...');
+async function flashCurrentChallenge() {
+  if (!currentChallenge) return;
+  setStatus(`Watch... (${flashCount + 1}/3)`);
   if (currentChallenge.length === 1) {
     await flashChar(currentChallenge);
   } else {
     await flashWord(currentChallenge);
   }
+  flashCount++;
   await sleep(400);
-  running = false;
   setStatus('What was it?');
+}
+
+async function startLearningChallenge() {
+  if (running) return;
+  running = true;
+  stopIdle();
+  currentChallenge = pickChallenge();
+  flashCount = 0;
+  await flashCurrentChallenge();
+  running = false;
+  updateUIForMode('learning');
+}
+
+async function replayChallenge() {
+  if (!currentChallenge || running || flashCount >= 3) return;
+  running = true;
+  await flashCurrentChallenge();
+  running = false;
+  if (flashCount >= 3) {
+    setStatus('Max flashes reached');
+  }
   updateUIForMode('learning');
 }
 
@@ -519,6 +554,7 @@ async function checkGuess() {
   updateScore();
   msgIn.value = '';
   currentChallenge = null;
+  flashCount = 0;
   running = false;
   updateUIForMode('learning');
   setTimeout(() => setStatus('Press Ready for next'), 2500);
@@ -533,6 +569,7 @@ function setMode(mode) {
   stopIdle();
   running = false;
   currentChallenge = null;
+  flashCount = 0;
   setStatus('');
   updateUIForMode(mode);
   if (mode === 'idle') {
@@ -561,6 +598,12 @@ playBtn.addEventListener('click', () => {
     const t = msgIn.value.trim();
     if (t) transmit(t);
     else setStatus('Type a phrase to flash for practice');
+  }
+});
+
+againBtn.addEventListener('click', () => {
+  if (currentMode === 'learning' && currentChallenge) {
+    replayChallenge();
   }
 });
 
