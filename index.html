@@ -86,6 +86,7 @@
     width: 100%;
     padding: 10px;
     font-size: 16px;
+    font-weight: 600;
   }
   #panel-toggle {
     position: fixed;
@@ -159,6 +160,10 @@
     color: #aaa;
     min-height: 1.2em;
     text-align: center;
+  }
+  #status.reveal {
+    font-size: 16px;
+    font-weight: 600;
   }
   #score {
     font-size: 0.85rem;
@@ -264,8 +269,15 @@ let currentChallenge = null;
 let correctCount = 0;
 let wrongCount = 0;
 
-function setStatus(msg) {
+function setStatus(msg, reveal = false) {
   statusEl.textContent = msg || '';
+  if (reveal) {
+    statusEl.classList.add('reveal');
+    statusEl.style.color = currentColor;
+  } else {
+    statusEl.classList.remove('reveal');
+    statusEl.style.color = '';
+  }
 }
 
 function updateScore() {
@@ -349,6 +361,9 @@ function updateColor(c) {
   hexIn.value = c;
   if (eyeL.innerHTML && !currentChallenge) setEyes(true);
   drawMouth(mouthSel.value);
+  if (statusEl.classList.contains('reveal')) {
+    statusEl.style.color = c;
+  }
 }
 
 colorIn.addEventListener('input', e => updateColor(e.target.value));
@@ -439,13 +454,18 @@ async function checkGuess() {
   const correct = guess === currentChallenge;
   if (correct) correctCount++; else wrongCount++;
   await showFeedback(correct);
-  setStatus(correct ? 'Correct!' : `Wrong. It was ${currentChallenge}`);
+  const code = MORSE[currentChallenge] || '';
+  if (correct) {
+    setStatus('Correct!', true);
+  } else {
+    setStatus(`That was ${currentChallenge}. Code: ${code}`, true);
+  }
   updateScore();
   msgIn.value = '';
   currentChallenge = null;
   running = false;
   updateUIForMode('learning');
-  setTimeout(() => setStatus('Press Ready for next'), 1500);
+  setTimeout(() => setStatus('Press Ready for next'), 2500);
 }
 
 async function receiveMode() {
