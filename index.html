@@ -993,11 +993,12 @@ function drawEyesToCanvas(ctx, w, h, on) {
     ctx.stroke();
   }
 
-  // Credit line
+  // Credit line (stacked)
   ctx.fillStyle = '#ffffff';
   ctx.font = '8px Helvetica, Arial, sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('Created by Morse™ v1 ©2026 OmniQuest Media Inc. All rights reserved. Proudly Canadian.', w / 2, h - 12);
+  ctx.fillText('Edutainment Created by MORSE™', w / 2, h - 20);
+  ctx.fillText('©2026 OmniQuest Media Inc. All rights reserved. Proudly Canadian.', w / 2, h - 8);
 }
 
 async function createGif(text) {
