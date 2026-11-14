@@ -308,6 +308,10 @@ function updateUIForMode(mode) {
     challengeType.style.display = 'block';
     playBtn.textContent = currentChallenge ? 'Submit Guess' : 'Ready';
     msgIn.placeholder = "What's your guess?";
+  } else if (mode === 'idle') {
+    challengeType.style.display = 'none';
+    playBtn.textContent = 'Display Loop';
+    msgIn.placeholder = 'Type a phrase (max 40)';
   } else {
     challengeType.style.display = 'none';
     playBtn.textContent = 'Play / Flash';
