@@ -86,6 +86,15 @@
     font-size: 16px;
     padding: 10px 12px;
   }
+  #morse-display {
+    width: 100%;
+    font-size: 18px;
+    letter-spacing: 2px;
+    min-height: 28px;
+    text-align: center;
+    color: #00e5ff;
+    display: none;
+  }
   #button-row {
     display: flex;
     width: 100%;
@@ -203,6 +212,7 @@
       <option value="words12">Words under 12 letters</option>
     </select>
     <input type="text" id="msg" placeholder="Type a phrase (max 40)" maxlength="40">
+    <div id="morse-display"></div>
     <div id="button-row">
       <button id="again">Again</button>
       <button id="play">Play / Flash</button>
@@ -278,6 +288,7 @@ const colorIn = document.getElementById('color');
 const hexIn = document.getElementById('hex');
 const hideLetter = document.getElementById('hideLetter');
 const msgIn = document.getElementById('msg');
+const morseDisplay = document.getElementById('morse-display');
 const playBtn = document.getElementById('play');
 const againBtn = document.getElementById('again');
 const panelToggle = document.getElementById('panel-toggle');
@@ -296,6 +307,9 @@ let currentChallenge = null;
 let flashCount = 0;
 let correctCount = 0;
 let wrongCount = 0;
+let tapStart = 0;
+let tapBuffer = '';
+const SHORT_THRESHOLD = 200;
 
 function setStatus(msg, reveal = false) {
   statusEl.textContent = msg || '';
@@ -325,27 +339,40 @@ function resetScore() {
 function updateUIForMode(mode) {
   if (mode === 'learning') {
     challengeType.style.display = 'block';
+    morseDisplay.style.display = 'block';
     playBtn.textContent = currentChallenge ? 'Submit Guess' : 'Ready';
     againBtn.style.display = currentChallenge ? 'block' : 'none';
-    msgIn.placeholder = "What's your guess?";
+    msgIn.placeholder = "What's your guess? (or tap Space/Enter)";
     hideLetter.checked = true;
   } else if (mode === 'idle') {
     challengeType.style.display = 'none';
+    morseDisplay.style.display = 'none';
     againBtn.style.display = 'none';
     playBtn.textContent = 'Display Loop';
     msgIn.placeholder = 'Type a phrase (max 40)';
   } else if (mode === 'oneshot') {
     challengeType.style.display = 'none';
+    morseDisplay.style.display = 'none';
     againBtn.style.display = 'none';
     playBtn.textContent = 'Display Code';
     msgIn.placeholder = 'Type a phrase (max 40)';
   } else {
     challengeType.style.display = 'none';
+    morseDisplay.style.display = 'none';
     againBtn.style.display = 'none';
     playBtn.textContent = 'Play / Flash';
     msgIn.placeholder = 'Type a phrase (max 40)';
   }
   updateScore();
+}
+
+function updateMorseDisplay() {
+  morseDisplay.textContent = tapBuffer || '';
+}
+
+function clearTapBuffer() {
+  tapBuffer = '';
+  updateMorseDisplay();
 }
 
 function drawShape(el, shape) {
@@ -520,6 +547,7 @@ async function startLearningChallenge() {
   stopIdle();
   currentChallenge = pickChallenge();
   flashCount = 0;
+  clearTapBuffer();
   await flashCurrentChallenge();
   running = false;
   updateUIForMode('learning');
@@ -536,30 +564,41 @@ async function replayChallenge() {
   updateUIForMode('learning');
 }
 
+function getExpectedMorse() {
+  if (!currentChallenge) return '';
+  if (currentChallenge.length === 1) return MORSE[currentChallenge] || '';
+  return currentChallenge.split('').map(c => MORSE[c] || '').join(' ');
+}
+
 async function checkGuess() {
   if (!currentChallenge || running) return;
-  const guess = msgIn.value.trim().toUpperCase();
-  if (!guess) {
-    setStatus('Type your guess first');
+  const typed = msgIn.value.trim().toUpperCase();
+  const tapped = tapBuffer.trim();
+  let correct = false;
+  let usedTap = false;
+
+  if (tapped) {
+    usedTap = true;
+    correct = tapped === getExpectedMorse();
+  } else if (typed) {
+    correct = typed === currentChallenge;
+  } else {
+    setStatus('Type a letter/word or tap Morse with Space/Enter');
     return;
   }
+
   running = true;
-  const correct = guess === currentChallenge;
   if (correct) correctCount++; else wrongCount++;
   await showFeedback(correct);
   if (correct) {
-    setStatus('Correct!', true);
+    setStatus(usedTap ? 'Correct Morse!' : 'Correct!', true);
   } else {
-    let codeDisplay = '';
-    if (currentChallenge.length === 1) {
-      codeDisplay = MORSE[currentChallenge] || '';
-    } else {
-      codeDisplay = currentChallenge.split('').map(c => MORSE[c] || '').join(' ');
-    }
-    setStatus(`That was ${currentChallenge}. Code: ${codeDisplay}`, true);
+    const expected = getExpectedMorse();
+    setStatus(`That was ${currentChallenge}. Code: ${expected}`, true);
   }
   updateScore();
   msgIn.value = '';
+  clearTapBuffer();
   currentChallenge = null;
   flashCount = 0;
   running = false;
@@ -577,6 +616,7 @@ function setMode(mode) {
   running = false;
   currentChallenge = null;
   flashCount = 0;
+  clearTapBuffer();
   setStatus('');
   updateUIForMode(mode);
   if (mode === 'idle') {
@@ -598,6 +638,7 @@ challengeType.addEventListener('change', () => {
     resetScore();
     currentChallenge = null;
     flashCount = 0;
+    clearTapBuffer();
     updateUIForMode('learning');
     setStatus('Type changed — score reset. Press Ready');
   }
@@ -626,6 +667,25 @@ againBtn.addEventListener('click', () => {
 
 msgIn.addEventListener('keydown', e => {
   if (e.key === 'Enter') playBtn.click();
+});
+
+document.addEventListener('keydown', e => {
+  if (currentMode !== 'learning' || !currentChallenge) return;
+  if (e.key === ' ' || e.key === 'Enter') {
+    e.preventDefault();
+    tapStart = Date.now();
+  }
+});
+
+document.addEventListener('keyup', e => {
+  if (currentMode !== 'learning' || !currentChallenge || !tapStart) return;
+  if (e.key === ' ' || e.key === 'Enter') {
+    const duration = Date.now() - tapStart;
+    const symbol = duration < SHORT_THRESHOLD ? '.' : '-';
+    tapBuffer += symbol;
+    updateMorseDisplay();
+    tapStart = 0;
+  }
 });
 
 updateColor('#00e5ff');
