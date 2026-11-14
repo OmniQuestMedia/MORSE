@@ -980,17 +980,35 @@ async function createGif(text) {
     numWorkers: 1
   }, function (obj) {
     clearTimeout(timeout);
-    if (!obj.error) {
+    if (!obj.error && obj.image) {
+      let preview = document.getElementById('gif-preview');
+      if (!preview) {
+        preview = document.createElement('div');
+        preview.id = 'gif-preview';
+        preview.style.cssText = 'margin-top:12px;text-align:center;';
+        downloadBtn.parentNode.appendChild(preview);
+      }
+      preview.innerHTML = '';
+      const img = document.createElement('img');
+      img.src = obj.image;
+      img.style.maxWidth = '200px';
+      img.style.border = '1px solid #333';
+      img.style.borderRadius = '6px';
+      preview.appendChild(img);
+
       const a = document.createElement('a');
       a.href = obj.image;
       a.download = 'morse-' + clean.replace(/[^A-Z0-9]+/g, '-') + '.gif';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      downloadBtn.textContent = 'Send & Share (GIF)';
+      a.textContent = 'Click here to download GIF';
+      a.style.cssText = 'display:block;margin-top:8px;color:' + currentColor + ';font-weight:600;';
+      preview.appendChild(a);
+
+      try { a.click(); } catch(e) {}
+
+      downloadBtn.textContent = 'GIF ready – see below';
       downloadBtn.disabled = false;
     } else {
-      downloadBtn.textContent = 'Error – try shorter';
+      downloadBtn.textContent = 'Error: ' + (obj.errorMsg || obj.errorCode || 'failed');
       downloadBtn.disabled = false;
     }
   });
