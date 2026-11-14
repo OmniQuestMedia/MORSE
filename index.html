@@ -649,9 +649,9 @@ function setMode(mode) {
   updateUIForMode(mode);
   if (mode === 'idle') {
     startIdle();
-    setStatus('Display Loop Running');
+    setStatus('Type a phrase, display repeats.');
   } else if (mode === 'oneshot') {
-    setStatus('One-shot: type a phrase and press Display Code');
+    setStatus('Type a phrase, display it once.');
   } else if (mode === 'learning') {
     setStatus('Learning: choose type and press Ready');
   } else if (mode === 'receive') {
