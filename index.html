@@ -917,17 +917,87 @@ function drawEyesToCanvas(ctx, w, h, on) {
   const c = on ? currentColor : 'rgba(255,255,255,0.12)';
   ctx.fillStyle = c;
   const shape = shapeSel.value;
-  const cx1 = w * 0.34, cx2 = w * 0.66, cy = h * 0.42, r = 28;
-  if (shape === 'circle' || shape === 'vpill' || shape === 'hpill') {
+  const cx1 = w * 0.38, cx2 = w * 0.62, cy = h * 0.38, r = 42;
+
+  if (shape === 'circle') {
     ctx.beginPath(); ctx.arc(cx1, cy, r, 0, Math.PI * 2); ctx.fill();
     ctx.beginPath(); ctx.arc(cx2, cy, r, 0, Math.PI * 2); ctx.fill();
+  } else if (shape === 'vpill') {
+    ctx.beginPath();
+    ctx.roundRect(cx1 - 18, cy - 50, 36, 100, 18); ctx.fill();
+    ctx.beginPath();
+    ctx.roundRect(cx2 - 18, cy - 50, 36, 100, 18); ctx.fill();
+  } else if (shape === 'hpill') {
+    ctx.beginPath();
+    ctx.roundRect(cx1 - 50, cy - 18, 100, 36, 18); ctx.fill();
+    ctx.beginPath();
+    ctx.roundRect(cx2 - 50, cy - 18, 100, 36, 18); ctx.fill();
   } else if (shape === 'square') {
     ctx.fillRect(cx1 - r, cy - r, r * 2, r * 2);
     ctx.fillRect(cx2 - r, cy - r, r * 2, r * 2);
-  } else {
-    ctx.beginPath(); ctx.arc(cx1, cy, r, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.arc(cx2, cy, r, 0, Math.PI * 2); ctx.fill();
+  } else if (shape === 'heart') {
+    function heart(x, y) {
+      ctx.beginPath();
+      ctx.moveTo(x, y + 20);
+      ctx.bezierCurveTo(x - 40, y - 10, x - 20, y - 40, x, y - 15);
+      ctx.bezierCurveTo(x + 20, y - 40, x + 40, y - 10, x, y + 20);
+      ctx.fill();
+    }
+    heart(cx1, cy);
+    heart(cx2, cy);
+  } else if (shape === 'star') {
+    function star(x, y) {
+      ctx.beginPath();
+      for (let i = 0; i < 5; i++) {
+        const angle = (i * 4 * Math.PI / 5) - Math.PI / 2;
+        const px = x + Math.cos(angle) * r;
+        const py = y + Math.sin(angle) * r;
+        i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.fill();
+    }
+    star(cx1, cy);
+    star(cx2, cy);
   }
+
+  // Mouth
+  const mouthType = mouthSel.value;
+  ctx.strokeStyle = c;
+  ctx.lineWidth = 6;
+  ctx.lineCap = 'round';
+  const mx = w / 2, my = h * 0.62;
+  if (mouthType === 'smile') {
+    ctx.beginPath();
+    ctx.moveTo(mx - 40, my);
+    ctx.quadraticCurveTo(mx, my + 28, mx + 40, my);
+    ctx.stroke();
+  } else if (mouthType === 'frown') {
+    ctx.beginPath();
+    ctx.moveTo(mx - 40, my + 18);
+    ctx.quadraticCurveTo(mx, my - 10, mx + 40, my + 18);
+    ctx.stroke();
+  } else if (mouthType === 'neutral') {
+    ctx.beginPath();
+    ctx.moveTo(mx - 40, my + 8);
+    ctx.lineTo(mx + 40, my + 8);
+    ctx.stroke();
+  } else if (mouthType === 'sneer') {
+    ctx.beginPath();
+    ctx.moveTo(mx - 35, my + 12);
+    ctx.lineTo(mx + 35, my + 2);
+    ctx.stroke();
+  } else if (mouthType === 'oh') {
+    ctx.beginPath();
+    ctx.ellipse(mx, my + 8, 14, 12, 0, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  // Credit line
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '8px Helvetica, Arial, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('Created by Morse™ v1 ©2026 OmniQuest Media Inc. All rights reserved. Proudly Canadian.', w / 2, h - 12);
 }
 
 async function createGif(text) {
@@ -941,8 +1011,8 @@ async function createGif(text) {
   }, 20000);
 
   const canvas = document.createElement('canvas');
-  canvas.width = 280;
-  canvas.height = 160;
+  canvas.width = 300;
+  canvas.height = 300;
   const ctx = canvas.getContext('2d');
 
   const clean = text.slice(0, 40).toUpperCase();
@@ -999,11 +1069,11 @@ async function createGif(text) {
       const a = document.createElement('a');
       a.href = obj.image;
       a.download = 'morse-' + clean.replace(/[^A-Z0-9]+/g, '-') + '.gif';
-      a.textContent = 'Click here to download GIF';
+      a.textContent = 'right click to save image';
       a.style.cssText = 'display:block;margin-top:8px;color:' + currentColor + ';font-weight:600;';
       preview.appendChild(a);
 
-      try { a.click(); } catch(e) {}
+      // automatic download removed
 
       downloadBtn.textContent = 'GIF ready – see below';
       downloadBtn.disabled = false;
