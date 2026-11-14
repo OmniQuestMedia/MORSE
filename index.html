@@ -97,6 +97,7 @@
     color: #aaa;
     text-align: center;
     margin-bottom: 4px;
+    line-height: 1.4;
   }
   #challenge-type {
     width: 100%;
@@ -174,12 +175,12 @@
   label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
   .info {
     max-width: 640px;
-    margin: 40px auto 0;
+    margin: 16px auto 0;
     padding: 0 16px 40px;
     text-align: center;
   }
   .footer {
-    margin-top: 2rem;
+    margin-top: 0.5rem;
     font-size: 0.85rem;
     color: #666;
     overflow-wrap: break-word;
@@ -234,9 +235,9 @@
       <option value="words8">Words under 8 letters</option>
       <option value="words12">Words under 12 letters</option>
     </select>
-    <div id="hint">Type a phrase or leave Morse looping. He’ll flash it with his eyes.</div>
-    <input type="text" id="msg" placeholder="Type a phrase (max 40)" maxlength="40">
+    <div id="hint">Type a phrase or leave Morse looping.<br>He’ll flash it with his eyes.</div>
     <div id="morse-display"></div>
+    <input type="text" id="msg" placeholder="Type a phrase (max 40)" maxlength="40">
     <div id="button-row">
       <button id="again">Again</button>
       <button id="play">Play / Flash</button>
