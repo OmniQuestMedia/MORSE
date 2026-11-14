@@ -160,6 +160,11 @@
     min-height: 1.2em;
     text-align: center;
   }
+  #score {
+    font-size: 0.85rem;
+    color: #888;
+    margin-top: 4px;
+  }
 </style>
 </head>
 <body>
@@ -177,6 +182,7 @@
     <input type="text" id="msg" placeholder="Type a phrase (max 40)" maxlength="40">
     <button id="play">Play / Flash</button>
     <div id="status"></div>
+    <div id="score"></div>
   </div>
 </div>
 
@@ -247,25 +253,38 @@ const panelToggle = document.getElementById('panel-toggle');
 const controls = document.getElementById('controls');
 const modeSel = document.getElementById('mode');
 const statusEl = document.getElementById('status');
+const scoreEl = document.getElementById('score');
 
 let currentColor = '#00e5ff';
 let unit = 110;
 let idleTimer = null;
 let running = false;
 let currentMode = 'idle';
+let currentChallenge = null;
+let correctCount = 0;
+let wrongCount = 0;
 
 function setStatus(msg) {
   statusEl.textContent = msg || '';
 }
 
+function updateScore() {
+  if (currentMode === 'learning') {
+    scoreEl.textContent = `Score: ${correctCount} correct, ${wrongCount} wrong`;
+  } else {
+    scoreEl.textContent = '';
+  }
+}
+
 function updateUIForMode(mode) {
   if (mode === 'learning') {
-    playBtn.textContent = 'Ready';
+    playBtn.textContent = currentChallenge ? 'Submit Guess' : 'Ready';
     msgIn.placeholder = "What's your guess?";
   } else {
     playBtn.textContent = 'Play / Flash';
     msgIn.placeholder = 'Type a phrase (max 40)';
   }
+  updateScore();
 }
 
 function drawShape(el, shape) {
@@ -278,6 +297,14 @@ function drawShape(el, shape) {
   else if (shape === 'heart') svg = `<svg viewBox="0 0 80 80"><path d="M40 68 C20 50 8 36 8 24 C8 14 16 8 26 8 C32 8 37 12 40 18 C43 12 48 8 54 8 C64 8 72 14 72 24 C72 36 60 50 40 68Z" fill="${c}"/></svg>`;
   else if (shape === 'star') svg = `<svg viewBox="0 0 80 80"><polygon points="40,8 48,30 72,30 52,44 60,68 40,54 20,68 28,44 8,30 32,30" fill="${c}"/></svg>`;
   el.innerHTML = svg;
+}
+
+function drawFeedback(el, type) {
+  if (type === 'check') {
+    el.innerHTML = `<svg viewBox="0 0 80 80"><path d="M20 40 L35 55 L60 25" fill="none" stroke="#00ff66" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  } else if (type === 'x') {
+    el.innerHTML = `<svg viewBox="0 0 80 80"><path d="M25 25 L55 55 M55 25 L25 55" fill="none" stroke="#ff4444" stroke-width="8" stroke-linecap="round"/></svg>`;
+  }
 }
 
 function drawMouth(type) {
@@ -302,11 +329,19 @@ function setEyes(on) {
   }
 }
 
+async function showFeedback(correct) {
+  const type = correct ? 'check' : 'x';
+  drawFeedback(eyeL, type);
+  drawFeedback(eyeR, type);
+  await sleep(1200);
+  setEyes(false);
+}
+
 function updateColor(c) {
   currentColor = c;
   colorIn.value = c;
   hexIn.value = c;
-  if (eyeL.innerHTML) setEyes(true);
+  if (eyeL.innerHTML && !currentChallenge) setEyes(true);
   drawMouth(mouthSel.value);
 }
 
@@ -316,7 +351,7 @@ hexIn.addEventListener('change', e => {
   if (!v.startsWith('#')) v = '#' + v;
   if (/^#[0-9A-Fa-f]{6}$/.test(v)) updateColor(v);
 });
-shapeSel.addEventListener('change', () => { if (eyeL.innerHTML) setEyes(true); });
+shapeSel.addEventListener('change', () => { if (eyeL.innerHTML && !currentChallenge) setEyes(true); });
 mouthSel.addEventListener('change', () => drawMouth(mouthSel.value));
 
 panelToggle.addEventListener('click', () => {
@@ -373,17 +408,38 @@ async function idleLoop() {
 function startIdle() { stopIdle(); idleIndex = 0; idleTimer = setTimeout(idleLoop, 300); }
 function stopIdle() { if (idleTimer) clearTimeout(idleTimer); idleTimer = null; }
 
-async function learningMode() {
+async function startLearningChallenge() {
   if (running) return;
   running = true;
   stopIdle();
-  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  const letter = letters[Math.floor(Math.random() * letters.length)];
-  setStatus(`Watch...`);
-  await flashChar(letter);
-  await sleep(800);
+  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  currentChallenge = letters[Math.floor(Math.random() * letters.length)];
+  setStatus('Watch...');
+  await flashChar(currentChallenge);
+  await sleep(400);
   running = false;
-  setStatus(`That was ${letter}. Code: ${MORSE[letter]}`);
+  setStatus('What was it?');
+  updateUIForMode('learning');
+}
+
+async function checkGuess() {
+  if (!currentChallenge || running) return;
+  const guess = msgIn.value.trim().toUpperCase();
+  if (!guess) {
+    setStatus('Type your guess first');
+    return;
+  }
+  running = true;
+  const correct = guess === currentChallenge;
+  if (correct) correctCount++; else wrongCount++;
+  await showFeedback(correct);
+  setStatus(correct ? 'Correct!' : `Wrong. It was ${currentChallenge}`);
+  updateScore();
+  msgIn.value = '';
+  currentChallenge = null;
+  running = false;
+  updateUIForMode('learning');
+  setTimeout(() => setStatus('Press Ready for next'), 1500);
 }
 
 async function receiveMode() {
@@ -394,6 +450,7 @@ function setMode(mode) {
   currentMode = mode;
   stopIdle();
   running = false;
+  currentChallenge = null;
   setStatus('');
   updateUIForMode(mode);
   if (mode === 'idle') {
@@ -402,7 +459,7 @@ function setMode(mode) {
   } else if (mode === 'oneshot') {
     setStatus('One-shot: type a phrase and press Play');
   } else if (mode === 'learning') {
-    setStatus('Learning: press Ready to see a letter');
+    setStatus('Learning: press Ready to start');
   } else if (mode === 'receive') {
     receiveMode();
   }
@@ -416,7 +473,8 @@ playBtn.addEventListener('click', () => {
     if (t) transmit(t);
     else if (currentMode === 'idle') setStatus('Type a phrase or wait for idle');
   } else if (currentMode === 'learning') {
-    learningMode();
+    if (currentChallenge) checkGuess();
+    else startLearningChallenge();
   } else if (currentMode === 'receive') {
     const t = msgIn.value.trim();
     if (t) transmit(t);
