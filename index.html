@@ -224,6 +224,22 @@
     display: none;
     margin-top: 4px;
   }
+  #send-target {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #fff;
+    text-align: center;
+    min-height: 1.6em;
+    margin-bottom: 4px;
+    display: none;
+  }
+  #decoded {
+    font-size: 0.95rem;
+    color: #ccc;
+    text-align: center;
+    min-height: 1.2em;
+    display: none;
+  }
 </style>
 </head>
 <body>
@@ -243,7 +259,9 @@
   </div>
   <div id="input-row">
     <div id="hint">Type a phrase or leave Morse looping.<br>He’ll flash it with his eyes.</div>
+    <div id="send-target"></div>
     <div id="morse-display"></div>
+    <div id="decoded"></div>
     <div id="status"></div>
     <input type="text" id="msg" placeholder="Type a phrase (max 40)" maxlength="40">
     <div id="button-row">
@@ -258,6 +276,18 @@
       <option value="words8">Words under 8 letters</option>
       <option value="words12">Words under 12 letters</option>
     </select>
+    <select id="send-difficulty" style="display:none;width:100%;">
+      <option value="learner" selected>Learner (under 5)</option>
+      <option value="beginner">Beginner (under 8)</option>
+      <option value="challenger">Challenger (under 12)</option>
+      <option value="expert">Expert</option>
+    </select>
+    <div id="send-controls" style="display:none;width:100%;display:flex;gap:6px;flex-wrap:wrap;justify-content:center;">
+      <button id="letter-space" type="button" style="flex:1;min-width:90px;">Letter Space</button>
+      <button id="word-space" type="button" style="flex:1;min-width:90px;">Word Space</button>
+      <button id="hint-btn" type="button" style="flex:1;min-width:70px;display:none;">Hint</button>
+      <button id="clear-send" type="button" style="flex:1;min-width:70px;">Clear</button>
+    </div>
   </div>
 </div>
 
@@ -265,7 +295,9 @@
   <select id="mode">
     <option value="idle" selected>Mode: Display Loop</option>
     <option value="oneshot">Mode: One-shot</option>
-    <option value="learning">Mode: Learning</option>
+    <option value="learning">Mode: Receive</option>
+    <option value="send">Mode: Send</option>
+    <option value="sendquiz">Mode: Send Quiz</option>
   </select>
   <select id="shape">
     <option value="vpill">Vertical pill</option>
@@ -312,6 +344,27 @@ const MORSE = {
 const WORDS5 = ['CAT','DOG','SUN','MOON','STAR','TREE','BOOK','BALL','FISH','BIRD','CAKE','RAIN','SNOW','WIND','FIRE','ROCK','LAKE','HILL','PATH','GATE'];
 const WORDS8 = ['FRIEND','HAPPY','SMILE','LIGHT','WATER','CLOUD','MUSIC','DANCE','GREEN','YELLOW','ORANGE','PURPLE','SILVER','GOLDEN','SIMPLE','QUICK','BRAVE','KIND','SMART','CALM'];
 const WORDS12 = ['SUNSHINE','RAINBOW','MOUNTAIN','BUTTERFLY','ADVENTURE','BEAUTIFUL','WONDERFUL','HAPPINESS','FRIENDSHIP','CHALLENGE','DISCOVERY','EXPLORER'];
+const EXPERT_PHRASES = ['HELLO WORLD','MORSE CODE','SEND IT','LEARNING IS FUN','I AM READY','PRACTICE DAILY','GOOD JOB','TRY AGAIN','SPACE BETWEEN','SHORT AND SWEET'];
+
+const REVERSE_MORSE = {};
+for (const [k,v] of Object.entries(MORSE)) {
+  if (k !== ' ') REVERSE_MORSE[v] = k;
+}
+
+function textToMorse(text) {
+  return text.toUpperCase().split('').map(ch => {
+    if (ch === ' ') return '/';
+    return MORSE[ch] || '';
+  }).join(' ').replace(/ \/ /g, ' / ').trim();
+}
+
+function decodeMorse(morse) {
+  if (!morse) return '';
+  const words = morse.trim().split(' / ');
+  return words.map(w => {
+    return w.trim().split(/\s+/).map(sym => REVERSE_MORSE[sym] || '?').join('');
+  }).join(' ');
+}
 
 const eyeL = document.getElementById('eyeL');
 const eyeR = document.getElementById('eyeR');
@@ -334,6 +387,14 @@ const scoreEl = document.getElementById('score');
 const challengeType = document.getElementById('challenge-type');
 const hintEl = document.getElementById('hint');
 const learningPrompt = document.getElementById('learning-prompt');
+const sendDifficulty = document.getElementById('send-difficulty');
+const sendControls = document.getElementById('send-controls');
+const sendTarget = document.getElementById('send-target');
+const decodedEl = document.getElementById('decoded');
+const letterSpaceBtn = document.getElementById('letter-space');
+const wordSpaceBtn = document.getElementById('word-space');
+const hintBtn = document.getElementById('hint-btn');
+const clearSendBtn = document.getElementById('clear-send');
 
 let currentColor = '#00e5ff';
 let unit = 110;
@@ -347,6 +408,8 @@ let wrongCount = 0;
 let tapStart = 0;
 let tapBuffer = '';
 let holdTimer = null;
+let sendTryCount = 0;
+let sendScore = 0;
 const SHORT_THRESHOLD = 450;
 
 function setStatus(msg, reveal = false) {
@@ -371,6 +434,9 @@ function updateScore() {
   if (currentMode === 'learning') {
     scoreEl.textContent = `Score: ${correctCount} correct, ${wrongCount} wrong`;
     scoreEl.style.color = currentColor;
+  } else if (currentMode === 'sendquiz') {
+    scoreEl.textContent = `Score: ${sendScore} points`;
+    scoreEl.style.color = currentColor;
   } else {
     scoreEl.textContent = '';
     scoreEl.style.color = '';
@@ -384,6 +450,12 @@ function resetScore() {
 }
 
 function updateUIForMode(mode) {
+  const isSend = mode === 'send' || mode === 'sendquiz';
+  sendControls.style.display = isSend ? 'flex' : 'none';
+  sendDifficulty.style.display = mode === 'sendquiz' ? 'block' : 'none';
+  sendTarget.style.display = mode === 'sendquiz' ? 'block' : 'none';
+  decodedEl.style.display = isSend ? 'block' : 'none';
+  hintBtn.style.display = mode === 'sendquiz' ? 'block' : 'none';
   if (mode === 'learning') {
     challengeType.style.display = 'block';
     morseDisplay.style.display = 'block';
@@ -410,6 +482,23 @@ function updateUIForMode(mode) {
     learningPrompt.style.display = 'none';
     playBtn.textContent = 'Display Code';
     msgIn.placeholder = 'Type a phrase (max 40)';
+  } else if (mode === 'send') {
+    challengeType.style.display = 'none';
+    morseDisplay.style.display = 'block';
+    againBtn.style.display = 'none';
+    hintEl.style.display = 'none';
+    learningPrompt.style.display = 'none';
+    playBtn.textContent = 'Clear & Practice';
+    msgIn.placeholder = 'Optional: type a phrase to practice (max 40)';
+    msgIn.style.display = 'block';
+  } else if (mode === 'sendquiz') {
+    challengeType.style.display = 'none';
+    morseDisplay.style.display = 'block';
+    againBtn.style.display = currentChallenge ? 'block' : 'none';
+    hintEl.style.display = 'none';
+    learningPrompt.style.display = 'none';
+    playBtn.textContent = currentChallenge ? 'Submit' : 'Start Quiz';
+    msgIn.style.display = 'none';
   } else {
     challengeType.style.display = 'none';
     morseDisplay.style.display = 'none';
@@ -423,7 +512,11 @@ function updateUIForMode(mode) {
 }
 
 function updateMorseDisplay(preview = '') {
-  morseDisplay.textContent = (tapBuffer || '') + preview;
+  const full = (tapBuffer || '') + preview;
+  morseDisplay.textContent = full;
+  if (currentMode === 'send' || currentMode === 'sendquiz') {
+    decodedEl.textContent = decodeMorse(full) || '(decoded)';
+  }
 }
 
 function clearTapBuffer() {
@@ -666,6 +759,56 @@ async function checkGuess() {
   setTimeout(() => setStatus('Press Ready For Next Guess'), 2500);
 }
 
+function pickSendChallenge() {
+  const diff = sendDifficulty.value;
+  if (diff === 'learner') return WORDS5[Math.floor(Math.random()*WORDS5.length)];
+  if (diff === 'beginner') return WORDS8[Math.floor(Math.random()*WORDS8.length)];
+  if (diff === 'challenger') return WORDS12[Math.floor(Math.random()*WORDS12.length)];
+  return EXPERT_PHRASES[Math.floor(Math.random()*EXPERT_PHRASES.length)];
+}
+
+async function startSendQuiz() {
+  currentChallenge = pickSendChallenge();
+  sendTryCount = 0;
+  clearTapBuffer();
+  sendTarget.textContent = currentChallenge;
+  setStatus('Tap the code, then Submit');
+  updateUIForMode('sendquiz');
+}
+
+function checkSendQuiz() {
+  if (!currentChallenge) return;
+  const expected = textToMorse(currentChallenge);
+  const user = tapBuffer.trim().replace(/\s+/g, ' ');
+  const correct = user === expected;
+  sendTryCount++;
+  if (correct) {
+    const pts = Math.max(1, 4 - sendTryCount);
+    sendScore += pts;
+    setStatus(`Correct! +${pts} points`, true);
+    currentChallenge = null;
+    clearTapBuffer();
+    updateScore();
+    updateUIForMode('sendquiz');
+    setTimeout(() => setStatus('Press Start Quiz for next'), 2000);
+  } else if (sendTryCount >= 3) {
+    setStatus(`Wrong. It was ${currentChallenge}. Code: ${expected}`, true);
+    currentChallenge = null;
+    clearTapBuffer();
+    updateUIForMode('sendquiz');
+    setTimeout(() => setStatus('Press Start Quiz for next'), 3000);
+  } else {
+    setStatus(`Wrong. Try again (${sendTryCount}/3)`);
+  }
+  updateScore();
+}
+
+function showHint() {
+  if (!currentChallenge) return;
+  const expected = textToMorse(currentChallenge);
+  setStatus(`${currentChallenge} → ${expected}`, true);
+}
+
 function setMode(mode) {
   currentMode = mode;
   stopIdle();
@@ -682,6 +825,13 @@ function setMode(mode) {
     setModeDescription('Type a phrase, code displays once.');
   } else if (mode === 'learning') {
     setStatus('');
+  } else if (mode === 'send') {
+    setModeDescription('Tap Space/Enter for . / - . Use Letter/Word Space buttons.');
+    clearTapBuffer();
+  } else if (mode === 'sendquiz') {
+    setStatus('Choose difficulty and press Start Quiz');
+    sendTarget.textContent = '';
+    clearTapBuffer();
   }
 }
 
@@ -706,6 +856,12 @@ playBtn.addEventListener('click', () => {
   } else if (currentMode === 'learning') {
     if (currentChallenge) checkGuess();
     else startLearningChallenge();
+  } else if (currentMode === 'send') {
+    clearTapBuffer();
+    setStatus('Cleared. Keep practicing.');
+  } else if (currentMode === 'sendquiz') {
+    if (currentChallenge) checkSendQuiz();
+    else startSendQuiz();
   }
 });
 
@@ -720,7 +876,8 @@ msgIn.addEventListener('keydown', e => {
 });
 
 document.addEventListener('keydown', e => {
-  if (currentMode !== 'learning' || !currentChallenge) return;
+  const allowTap = (currentMode === 'learning' && currentChallenge) || currentMode === 'send' || (currentMode === 'sendquiz' && currentChallenge);
+  if (!allowTap) return;
   if ((e.key === ' ' || e.key === 'Enter') && !tapStart) {
     e.preventDefault();
     tapStart = Date.now();
@@ -733,7 +890,8 @@ document.addEventListener('keydown', e => {
 });
 
 document.addEventListener('keyup', e => {
-  if (currentMode !== 'learning' || !currentChallenge || !tapStart) return;
+  const allowTap = (currentMode === 'learning' && currentChallenge) || currentMode === 'send' || (currentMode === 'sendquiz' && currentChallenge);
+  if (!allowTap || !tapStart) return;
   if (e.key === ' ' || e.key === 'Enter') {
     const duration = Date.now() - tapStart;
     const symbol = duration < SHORT_THRESHOLD ? '.' : '-';
@@ -744,6 +902,34 @@ document.addEventListener('keyup', e => {
       clearTimeout(holdTimer);
       holdTimer = null;
     }
+  }
+});
+
+letterSpaceBtn.addEventListener('click', () => {
+  if (currentMode === 'send' || currentMode === 'sendquiz') {
+    tapBuffer += (tapBuffer && !tapBuffer.endsWith(' ') ? ' ' : '');
+    updateMorseDisplay();
+  }
+});
+wordSpaceBtn.addEventListener('click', () => {
+  if (currentMode === 'send' || currentMode === 'sendquiz') {
+    tapBuffer = tapBuffer.trim() + ' / ';
+    updateMorseDisplay();
+  }
+});
+hintBtn.addEventListener('click', showHint);
+clearSendBtn.addEventListener('click', () => {
+  clearTapBuffer();
+  if (currentMode === 'sendquiz' && currentChallenge) setStatus('Cleared. Tap again.');
+});
+
+sendDifficulty.addEventListener('change', () => {
+  if (currentMode === 'sendquiz') {
+    currentChallenge = null;
+    clearTapBuffer();
+    sendTarget.textContent = '';
+    updateUIForMode('sendquiz');
+    setStatus('Difficulty changed. Press Start Quiz.');
   }
 });
 
