@@ -1,1 +1,1006 @@
-PLACEHOLDER
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Morse — Say it in a flash!</title>
+<script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.js"></script>
+<link rel="manifest" href="manifest.json">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #000;
+    font-family: Helvetica, Arial, system-ui, sans-serif;
+    color: #e0e0e0;
+    line-height: 1.5;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  #app {
+    position: relative;
+    padding: 6vh 12px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    min-height: 50vh;
+  }
+  #tagline {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  #tagline .top {
+    font-size: 1.1rem;
+    color: #aaa;
+    margin-bottom: 4px;
+  }
+  #tagline .main {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.1;
+  }
+  #face {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    margin-top: 2vh;
+  }
+  #eyes-wrap {
+    display: flex;
+    gap: 32px;
+    justify-content: center;
+    align-items: center;
+    height: 110px;
+  }
+  .eye {
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .eye svg { width: 100%; height: 100%; }
+  #mouth {
+    margin-top: 8px;
+    width: 100px;
+    height: 32px;
+  }
+  #mouth svg { width: 100%; height: 100%; }
+  #letter {
+    position: absolute;
+    left: calc(100% + 60px);
+    top: 8px;
+    font-size: 28px;
+    font-weight: 700;
+    color: #888;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.1s;
+    transform: translateX(-50%);
+    text-align: center;
+    text-shadow: 0 0 8px rgba(0,0,0,0.5);
+  }
+  #input-row {
+    margin-top: 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    max-width: 320px;
+  }
+  #hint {
+    font-size: 0.9rem;
+    color: #aaa;
+    text-align: center;
+    margin-bottom: 4px;
+    line-height: 1.4;
+  }
+  #challenge-type {
+    width: 100%;
+    display: none;
+    margin-top: 6px;
+  }
+  #msg {
+    width: 100%;
+    font-size: 16px;
+    padding: 10px 12px;
+  }
+  #morse-display {
+    width: 100%;
+    font-size: 18px;
+    letter-spacing: 2px;
+    min-height: 28px;
+    text-align: center;
+    color: #00e5ff;
+    display: none;
+  }
+  #button-row {
+    display: flex;
+    width: 100%;
+    gap: 8px;
+  }
+  #play, #again {
+    flex: 1;
+    padding: 10px;
+    font-size: 16px;
+    font-weight: 600;
+  }
+  #again {
+    display: none;
+  }
+  #panel-toggle {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    font-size: 13px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid #444;
+    background: #111;
+    color: #fff;
+    cursor: pointer;
+    z-index: 20;
+  }
+  #controls {
+    display: none;
+    position: fixed;
+    top: 48px;
+    right: 12px;
+    flex-direction: column;
+    gap: 8px;
+    background: rgba(0,0,0,0.85);
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid #333;
+    font-size: 14px;
+    min-width: 220px;
+    z-index: 19;
+  }
+  #controls.open { display: flex; }
+  button, select, input[type="text"], input[type="color"] {
+    font-family: inherit;
+    font-size: 14px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid #444;
+    background: #111;
+    color: #fff;
+  }
+  button { cursor: pointer; }
+  button:hover { background: #222; }
+  #hex { width: 90px; }
+  label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .info {
+    max-width: 640px;
+    margin: 16px auto 0;
+    padding: 0 16px 40px;
+    text-align: center;
+  }
+  .footer {
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    color: #666;
+    overflow-wrap: break-word;
+  }
+  .footer a { color: #00e5ff; text-decoration: none; }
+  .privacy {
+    margin-top: 1.2rem;
+    font-size: 0.8rem;
+    color: #777;
+    max-width: 520px;
+    margin-left: auto;
+    margin-right: auto;
+    overflow-wrap: break-word;
+  }
+  #status {
+    margin-top: 0;
+    margin-bottom: 4px;
+    font-size: 0.9rem;
+    color: #aaa;
+    min-height: 0.4em;
+    text-align: center;
+    width: 100%;
+  }
+  #status.reveal {
+    font-size: 16px;
+    font-weight: 600;
+  }
+  #status.mode-desc {
+    color: var(--mode-color, #aaa);
+  }
+  #score {
+    font-size: 0.85rem;
+    margin-top: 2px;
+  }
+  #learning-prompt {
+    font-size: 0.9rem;
+    color: #aaa;
+    text-align: center;
+    width: 100%;
+    display: none;
+    margin-top: 4px;
+  }
+  #send-target {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #fff;
+    text-align: center;
+    min-height: 1.6em;
+    margin-bottom: 4px;
+    display: none;
+  }
+
+  #stats {
+    font-size: 0.8rem;
+    color: #888;
+    text-align: center;
+    margin-top: 2px;
+    min-height: 1.1em;
+  }
+  #custom-list {
+    width: 100%;
+    font-size: 13px;
+    padding: 6px 8px;
+    display: none;
+  }
+
+</style>
+</head>
+<body>
+<button id="panel-toggle">Controls</button>
+<div id="app">
+  <div id="tagline">
+    <div class="top">You Don't Have To Say It</div>
+    <div class="main">MORSE Says It In Code</div>
+  </div>
+  <div id="face">
+    <div id="eyes-wrap">
+      <div class="eye" id="eyeL"></div>
+      <div class="eye" id="eyeR"></div>
+    </div>
+    <div id="mouth"></div>
+    <div id="letter"></div>
+  </div>
+  <div id="input-row">
+    <div id="hint">Type a phrase or leave Morse looping.<br>He’ll flash it with his eyes.</div>
+    <div id="send-target"></div>
+    <div id="morse-display"></div>
+    <div id="status"></div>
+    <input type="text" id="msg" placeholder="Type a phrase (max 40)" maxlength="40">
+    <div id="button-row">
+      <button id="again">Again</button>
+      <button id="play">Play / Flash</button>
+      <button id="downloadGif" style="display:none;flex:1;">Download GIF</button>
+    </div>
+    <div id="score"></div>
+    <div id="learning-prompt">Learning: choose type and press Ready.</div>
+    <select id="challenge-type">
+      <option value="letters" selected>Letters & Numbers</option>
+      <option value="words5">Words under 5 letters</option>
+      <option value="words8">Words under 8 letters</option>
+      <option value="words12">Words under 12 letters</option>
+    </select>
+    <select id="send-difficulty" style="display:none;width:100%;">
+      <option value="learner" selected>Learner (under 5)</option>
+      <option value="beginner">Beginner (under 8)</option>
+      <option value="challenger">Challenger (under 12)</option>
+      <option value="expert">Expert</option>
+    </select>
+    <div id="send-controls" style="display:none;width:100%;display:flex;gap:6px;flex-wrap:wrap;justify-content:center;">
+      <button id="hint-btn" type="button" style="flex:1;min-width:70px;display:none;">Hint</button>
+      <button id="clear-send" type="button" style="flex:1;min-width:70px;">Clear</button>
+    </div>
+    <div id="stats"></div>
+    <input type="text" id="custom-list" placeholder="Custom phrases, comma separated (e.g. HELLO, GREEN, MORSE CODE)">
+  </div>
+</div>
+
+<div id="controls">
+  <select id="mode">
+    <option value="idle" selected>Mode: Display Loop</option>
+    <option value="oneshot">Mode: One-shot</option>
+    <option value="learning">Mode: Receive</option>
+    <option value="send">Mode: Send</option>
+    <option value="sendquiz">Mode: Send Quiz</option>
+    <option value="copy">Mode: Copy This</option>
+  </select>
+  <select id="shape">
+    <option value="vpill">Vertical pill</option>
+    <option value="hpill">Horizontal pill</option>
+    <option value="circle">Circle</option>
+    <option value="square">Square</option>
+    <option value="heart">Heart</option>
+    <option value="star">Star</option>
+  </select>
+  <select id="mouthSel">
+    <option value="smile" selected>Mouth: smile</option>
+    <option value="neutral">Mouth: neutral</option>
+    <option value="frown">Mouth: frown</option>
+    <option value="sneer">Mouth: sneer</option>
+    <option value="oh">Mouth: oh</option>
+  </select>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <input type="color" id="color" value="#00e5ff">
+    <input type="text" id="hex" placeholder="#00e5ff" maxlength="7">
+  </div>
+  <label><input type="checkbox" id="hideLetter"> Hide letter</label>
+  <a href="https://99604f81-1777-4796-9c27-f07a2413cac7.usrfiles.com/ugd/99604f_d362d9dffb224ae79e3e49ee164be687.pdf" target="_blank" rel="noopener" style="display:block;text-align:center;padding:8px 10px;border-radius:6px;border:1px solid #444;background:#111;color:#fff;text-decoration:none;font-weight:600;margin-top:4px;">User Manual</a>
+</div>
+
+<div class="info">
+  <div class="footer">
+    Free novelty beacon by <a href="https://omniquestmedia.com" target="_blank" rel="noopener">OmniQuest Media Inc.</a><br>
+    <a href="https://github.com/OmniQuestMedia/MORSE" target="_blank" rel="noopener">Source</a> · Not for emergency use.
+    <div class="privacy">
+      Morse runs entirely in your browser. No personal data is collected, stored, or transmitted. Nothing is sent to any server. Your device and information stay private.
+    </div>
+  </div>
+</div>
+
+<script>
+const MORSE = {
+  'A':'.-','B':'-...','C':'-.-.','D':'-..','E':'.','F':'..-.','G':'--.','H':'....',
+  'I':'..','J':'.---','K':'-.-','L':'.-..','M':'--','N':'-.','O':'---','P':'.--.',
+  'Q':'--.-','R':'.-.','S':'...','T':'-','U':'..-','V':'...-','W':'.--','X':'-..-',
+  'Y':'-.--','Z':'--..','0':'-----','1':'.----','2':'..---','3':'...--','4':'....-',
+  '5':'.....','6':'-....','7':'--...','8':'---..','9':'----.',
+  '.':'.-.-.-',',':'--..--','?':'..--..','!':'-.-.--',' ':' '
+};
+
+const WORDS5 = ['CAT','DOG','SUN','MOON','STAR','TREE','BOOK','BALL','FISH','BIRD','CAKE','RAIN','SNOW','WIND','FIRE','ROCK','LAKE','HILL','PATH','GATE'];
+const WORDS8 = ['FRIEND','HAPPY','SMILE','LIGHT','WATER','CLOUD','MUSIC','DANCE','GREEN','YELLOW','ORANGE','PURPLE','SILVER','GOLDEN','SIMPLE','QUICK','BRAVE','KIND','SMART','CALM'];
+const WORDS12 = ['SUNSHINE','RAINBOW','MOUNTAIN','BUTTERFLY','ADVENTURE','BEAUTIFUL','WONDERFUL','HAPPINESS','FRIENDSHIP','CHALLENGE','DISCOVERY','EXPLORER'];
+const EXPERT_PHRASES = ['HELLO WORLD','MORSE CODE','SEND IT','LEARNING IS FUN','I AM READY','PRACTICE DAILY','GOOD JOB','TRY AGAIN','SPACE BETWEEN','SHORT AND SWEET'];
+
+const REVERSE_MORSE = {};
+for (const [k,v] of Object.entries(MORSE)) {
+  if (k !== ' ') REVERSE_MORSE[v] = k;
+}
+
+function textToMorse(text) {
+  return text.toUpperCase().split('').map(ch => {
+    if (ch === ' ') return '/';
+    return MORSE[ch] || '';
+  }).join(' ').replace(/ \/ /g, ' / ').trim();
+}
+
+function decodeMorse(morse) {
+  if (!morse) return '';
+  const words = morse.trim().split(' / ');
+  return words.map(w => {
+    return w.trim().split(/\s+/).map(sym => REVERSE_MORSE[sym] || '?').join('');
+  }).join(' ');
+}
+
+const eyeL = document.getElementById('eyeL');
+const eyeR = document.getElementById('eyeR');
+const mouthEl = document.getElementById('mouth');
+const letterEl = document.getElementById('letter');
+const shapeSel = document.getElementById('shape');
+const mouthSel = document.getElementById('mouthSel');
+const colorIn = document.getElementById('color');
+const hexIn = document.getElementById('hex');
+const hideLetter = document.getElementById('hideLetter');
+const msgIn = document.getElementById('msg');
+const morseDisplay = document.getElementById('morse-display');
+const playBtn = document.getElementById('play');
+const againBtn = document.getElementById('again');
+const panelToggle = document.getElementById('panel-toggle');
+const controls = document.getElementById('controls');
+const modeSel = document.getElementById('mode');
+const statusEl = document.getElementById('status');
+const scoreEl = document.getElementById('score');
+const challengeType = document.getElementById('challenge-type');
+const hintEl = document.getElementById('hint');
+const learningPrompt = document.getElementById('learning-prompt');
+const sendDifficulty = document.getElementById('send-difficulty');
+const sendControls = document.getElementById('send-controls');
+const sendTarget = document.getElementById('send-target');
+const hintBtn = document.getElementById('hint-btn');
+const clearSendBtn = document.getElementById('clear-send');
+const statsEl = document.getElementById('stats');
+const customListIn = document.getElementById('custom-list');
+
+let currentColor = '#00e5ff';
+let unit = 110;
+let idleTimer = null;
+let running = false;
+let currentMode = 'idle';
+let currentChallenge = null;
+let flashCount = 0;
+let correctCount = 0;
+let wrongCount = 0;
+let tapStart = 0;
+let tapBuffer = '';
+let holdTimer = null;
+let sendTryCount = 0;
+let sendScore = 0;
+let lastTapEnd = 0;
+let sessionSymbols = 0;
+let sessionCorrect = 0;
+let sessionAttempts = 0;
+let sessionStart = Date.now();
+let audioCtx = null;
+let customPhrases = [];
+const SHORT_THRESHOLD = 450;
+
+function setStatus(msg, reveal = false) {
+  statusEl.textContent = msg || '';
+  statusEl.classList.remove('reveal', 'mode-desc');
+  if (reveal) {
+    statusEl.classList.add('reveal');
+    statusEl.style.color = currentColor;
+  } else {
+    statusEl.style.color = '';
+  }
+}
+
+function setModeDescription(msg) {
+  statusEl.textContent = msg;
+  statusEl.classList.remove('reveal');
+  statusEl.classList.add('mode-desc');
+  statusEl.style.color = currentColor;
+}
+
+function updateScore() {
+  if (currentMode === 'learning') {
+    scoreEl.textContent = `Score: ${correctCount} correct, ${wrongCount} wrong`;
+    scoreEl.style.color = currentColor;
+  } else if (currentMode === 'sendquiz') {
+    scoreEl.textContent = `Score: ${sendScore} points`;
+    scoreEl.style.color = currentColor;
+  } else {
+    scoreEl.textContent = '';
+    scoreEl.style.color = '';
+  }
+}
+
+function resetScore() {
+  correctCount = 0;
+  wrongCount = 0;
+  updateScore();
+}
+
+function updateUIForMode(mode) {
+  const isSend = mode === 'send' || mode === 'sendquiz' || mode === 'copy';
+  sendControls.style.display = isSend ? 'flex' : 'none';
+  sendDifficulty.style.display = (mode === 'sendquiz' || mode === 'copy') ? 'block' : 'none';
+  sendTarget.style.display = (mode === 'sendquiz' || mode === 'copy') ? 'block' : 'none';
+  hintBtn.style.display = (mode === 'sendquiz' || mode === 'copy') ? 'block' : 'none';
+  customListIn.style.display = (mode === 'sendquiz' || mode === 'copy') ? 'block' : 'none';
+  if (mode === 'learning') {
+    challengeType.style.display = 'block';
+    morseDisplay.style.display = 'block';
+    hintEl.style.display = 'none';
+    learningPrompt.style.display = 'block';
+    learningPrompt.style.color = currentColor;
+    playBtn.textContent = currentChallenge ? 'Submit Guess' : 'Ready';
+    againBtn.style.display = currentChallenge ? 'block' : 'none';
+    msgIn.placeholder = "What's your guess? (or tap Space/Enter)";
+    hideLetter.checked = true;
+  } else if (mode === 'idle') {
+    challengeType.style.display = 'none';
+    morseDisplay.style.display = 'none';
+    againBtn.style.display = 'none';
+    hintEl.style.display = 'block';
+    learningPrompt.style.display = 'none';
+    playBtn.textContent = 'Display Loop';
+    msgIn.placeholder = 'Type a phrase (max 40)';
+  } else if (mode === 'oneshot') {
+    challengeType.style.display = 'none';
+    morseDisplay.style.display = 'none';
+    againBtn.style.display = 'none';
+    hintEl.style.display = 'block';
+    learningPrompt.style.display = 'none';
+    playBtn.textContent = 'Display Code';
+    msgIn.placeholder = 'Type a phrase (max 40)';
+  } else if (mode === 'send') {
+    challengeType.style.display = 'none';
+    morseDisplay.style.display = 'block';
+    againBtn.style.display = 'none';
+    hintEl.style.display = 'none';
+    learningPrompt.style.display = 'none';
+    playBtn.textContent = 'Clear & Practice';
+    msgIn.placeholder = 'Optional: type a phrase to practice (max 40)';
+    msgIn.style.display = 'block';
+  } else if (mode === 'sendquiz') {
+    challengeType.style.display = 'none';
+    morseDisplay.style.display = 'block';
+    againBtn.style.display = currentChallenge ? 'block' : 'none';
+    hintEl.style.display = 'none';
+    learningPrompt.style.display = 'none';
+    playBtn.textContent = currentChallenge ? 'Submit' : 'Start Quiz';
+    msgIn.style.display = 'none';
+  } else if (mode === 'copy') {
+    challengeType.style.display = 'none';
+    morseDisplay.style.display = 'block';
+    againBtn.style.display = currentChallenge ? 'block' : 'none';
+    hintEl.style.display = 'none';
+    learningPrompt.style.display = 'none';
+    playBtn.textContent = currentChallenge ? 'Submit Copy' : 'Start Copy';
+    msgIn.style.display = 'none';
+  } else {
+    challengeType.style.display = 'none';
+    morseDisplay.style.display = 'none';
+    againBtn.style.display = 'none';
+    hintEl.style.display = 'block';
+    learningPrompt.style.display = 'none';
+    playBtn.textContent = 'Play / Flash';
+    msgIn.placeholder = 'Type a phrase (max 40)';
+  }
+  updateScore();
+}
+
+function updateMorseDisplay(preview = '') {
+  const full = (tapBuffer || '') + preview;
+  morseDisplay.textContent = full;
+  updateStats();
+}
+
+function updateStats() {
+  const elapsedMin = Math.max(0.01, (Date.now() - sessionStart) / 60000);
+  const wpm = sessionSymbols > 0 ? Math.round((sessionSymbols / 5) / elapsedMin) : 0;
+  const acc = sessionAttempts > 0 ? Math.round((sessionCorrect / sessionAttempts) * 100) : 0;
+  statsEl.textContent = sessionAttempts || sessionSymbols ? `WPM ~${wpm} · Accuracy ${acc}%` : '';
+}
+
+function clearTapBuffer() {
+  tapBuffer = '';
+  updateMorseDisplay();
+}
+
+function drawShape(el, shape) {
+  const c = currentColor;
+  let svg = '';
+  if (shape === 'vpill') svg = `<svg viewBox="0 0 60 90"><rect x="10" y="5" width="40" height="80" rx="20" fill="${c}"/></svg>`;
+  else if (shape === 'hpill') svg = `<svg viewBox="0 0 90 60"><rect x="5" y="10" width="80" height="40" rx="20" fill="${c}"/></svg>`;
+  else if (shape === 'circle') svg = `<svg viewBox="0 0 80 80"><circle cx="40" cy="40" r="32" fill="${c}"/></svg>`;
+  else if (shape === 'square') svg = `<svg viewBox="0 0 80 80"><rect x="12" y="12" width="56" height="56" rx="6" fill="${c}"/></svg>`;
+  else if (shape === 'heart') svg = `<svg viewBox="0 0 80 80"><path d="M40 68 C20 50 8 36 8 24 C8 14 16 8 26 8 C32 8 37 12 40 18 C43 12 48 8 54 8 C64 8 72 14 72 24 C72 36 60 50 40 68Z" fill="${c}"/></svg>`;
+  else if (shape === 'star') svg = `<svg viewBox="0 0 80 80"><polygon points="40,8 48,30 72,30 52,44 60,68 40,54 20,68 28,44 8,30 32,30" fill="${c}"/></svg>`;
+  el.innerHTML = svg;
+}
+
+function drawFeedback(el, type) {
+  if (type === 'check') {
+    el.innerHTML = `<svg viewBox="0 0 80 80"><path d="M20 42 L34 56 L60 28" fill="none" stroke="#4caf50" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  } else if (type === 'x') {
+    el.innerHTML = `<svg viewBox="0 0 80 80"><path d="M24 24 L56 56 M56 24 L24 56" fill="none" stroke="#f44336" stroke-width="8" stroke-linecap="round"/></svg>`;
+  }
+}
+
+function drawMouth(type) {
+  const c = currentColor;
+  let svg = '';
+  if (type === 'neutral') svg = `<svg viewBox="0 0 100 40"><line x1="15" y1="20" x2="85" y2="20" stroke="${c}" stroke-width="6" stroke-linecap="round"/></svg>`;
+  else if (type === 'smile') svg = `<svg viewBox="0 0 100 40"><path d="M15 12 Q50 36 85 12" fill="none" stroke="${c}" stroke-width="6" stroke-linecap="round"/></svg>`;
+  else if (type === 'frown') svg = `<svg viewBox="0 0 100 40"><path d="M15 28 Q50 4 85 28" fill="none" stroke="${c}" stroke-width="6" stroke-linecap="round"/></svg>`;
+  else if (type === 'sneer') svg = `<svg viewBox="0 0 100 40"><path d="M20 22 Q40 10 55 20 Q70 30 80 18" fill="none" stroke="${c}" stroke-width="6" stroke-linecap="round"/></svg>`;
+  else if (type === 'oh') svg = `<svg viewBox="0 0 100 40"><ellipse cx="50" cy="20" rx="14" ry="10" fill="none" stroke="${c}" stroke-width="6"/></svg>`;
+  mouthEl.innerHTML = svg;
+}
+
+function applyColor(c) {
+  currentColor = c;
+  colorIn.value = c;
+  hexIn.value = c;
+  redraw();
+
+  const top = document.querySelector('#tagline .top');
+  const main = document.querySelector('#tagline .main');
+  if (top) top.style.color = c;
+  if (main) main.style.color = c;
+
+  const hint = document.getElementById('hint');
+  if (hint) hint.style.color = c;
+  const learningPrompt = document.getElementById('learning-prompt');
+  if (learningPrompt) learningPrompt.style.color = c;
+
+  document.querySelectorAll('button, #controls a').forEach(btn => {
+    btn.style.borderColor = c;
+    btn.style.color = c;
+  });
+
+  document.querySelectorAll('#controls select, #controls input').forEach(el => {
+    el.style.borderColor = c;
+  });
+
+  const morseDisplay = document.getElementById('morse-display');
+  if (morseDisplay) morseDisplay.style.color = c;
+  const sendTarget = document.getElementById('send-target');
+  if (sendTarget) sendTarget.style.color = c;
+
+  document.querySelectorAll('.footer a').forEach(a => a.style.color = c);
+}
+
+function redraw() {
+  drawShape(eyeL, shapeSel.value);
+  drawShape(eyeR, shapeSel.value);
+  drawMouth(mouthSel.value);
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function flashOn(ms) {
+  eyeL.style.opacity = 1;
+  eyeR.style.opacity = 1;
+  await sleep(ms);
+  eyeL.style.opacity = 0.15;
+  eyeR.style.opacity = 0.15;
+}
+
+async function playSymbol(sym) {
+  if (sym === '.') await flashOn(unit);
+  else if (sym === '-') await flashOn(unit * 3);
+  await sleep(unit);
+}
+
+async function playMorse(morse) {
+  if (running) return;
+  running = true;
+  eyeL.style.opacity = 0.15;
+  eyeR.style.opacity = 0.15;
+  const parts = morse.split(' ');
+  for (const part of parts) {
+    if (!running) break;
+    if (part === '/') {
+      await sleep(unit * 4);
+      continue;
+    }
+    for (const sym of part) {
+      if (!running) break;
+      await playSymbol(sym);
+    }
+    await sleep(unit * 2);
+  }
+  eyeL.style.opacity = 1;
+  eyeR.style.opacity = 1;
+  running = false;
+}
+
+function startIdle() {
+  stopIdle();
+  const phrases = ['HELLO','MORSE','CODE','FLASH','EYES','SMILE'];
+  let i = 0;
+  function loop() {
+    if (currentMode !== 'idle') return;
+    const phrase = phrases[i % phrases.length];
+    i++;
+    const morse = textToMorse(phrase);
+    playMorse(morse).then(() => {
+      if (currentMode === 'idle') idleTimer = setTimeout(loop, 2000);
+    });
+  }
+  idleTimer = setTimeout(loop, 500);
+}
+
+function stopIdle() {
+  if (idleTimer) clearTimeout(idleTimer);
+  idleTimer = null;
+  running = false;
+}
+
+function pickChallenge() {
+  const type = challengeType.value;
+  let pool;
+  if (type === 'letters') pool = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.split('');
+  else if (type === 'words5') pool = WORDS5;
+  else if (type === 'words8') pool = WORDS8;
+  else pool = WORDS12;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function pickSendChallenge() {
+  const diff = sendDifficulty.value;
+  let pool;
+  if (diff === 'learner') pool = WORDS5;
+  else if (diff === 'beginner') pool = WORDS8;
+  else if (diff === 'challenger') pool = WORDS12;
+  else pool = EXPERT_PHRASES;
+  if (customPhrases.length) pool = customPhrases;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function startChallenge() {
+  currentChallenge = pickChallenge();
+  const morse = textToMorse(currentChallenge);
+  morseDisplay.textContent = morse;
+  flashCount = 0;
+  playMorse(morse);
+  playBtn.textContent = 'Submit Guess';
+  againBtn.style.display = 'block';
+  setStatus('Listen and guess...');
+}
+
+function startSendQuiz() {
+  currentChallenge = pickSendChallenge();
+  sendTarget.textContent = currentChallenge;
+  clearTapBuffer();
+  sendTryCount = 0;
+  playBtn.textContent = 'Submit';
+  againBtn.style.display = 'block';
+  setStatus('Tap it out...');
+}
+
+function startCopy() {
+  currentChallenge = pickSendChallenge();
+  const morse = textToMorse(currentChallenge);
+  morseDisplay.textContent = morse;
+  sendTarget.textContent = '';
+  clearTapBuffer();
+  playBtn.textContent = 'Submit Copy';
+  againBtn.style.display = 'block';
+  setStatus('Copy the code...');
+}
+
+panelToggle.addEventListener('click', () => {
+  controls.classList.toggle('open');
+  panelToggle.textContent = controls.classList.contains('open') ? 'Hide' : 'Controls';
+});
+
+shapeSel.addEventListener('change', redraw);
+mouthSel.addEventListener('change', redraw);
+
+colorIn.addEventListener('input', e => applyColor(e.target.value));
+hexIn.addEventListener('change', () => {
+  let v = hexIn.value.trim();
+  if (!v.startsWith('#')) v = '#' + v;
+  if (/^#[0-9a-fA-F]{6}$/.test(v)) applyColor(v);
+});
+
+modeSel.addEventListener('change', () => {
+  currentMode = modeSel.value;
+  stopIdle();
+  currentChallenge = null;
+  resetScore();
+  clearTapBuffer();
+  updateUIForMode(currentMode);
+  if (currentMode === 'idle') {
+    setModeDescription('Display Loop');
+    startIdle();
+  } else if (currentMode === 'oneshot') {
+    setModeDescription('One-shot');
+  } else if (currentMode === 'learning') {
+    setModeDescription('Receive');
+  } else if (currentMode === 'send') {
+    setModeDescription('Send');
+  } else if (currentMode === 'sendquiz') {
+    setModeDescription('Send Quiz');
+  } else if (currentMode === 'copy') {
+    setModeDescription('Copy This');
+  }
+});
+
+playBtn.addEventListener('click', () => {
+  if (currentMode === 'learning') {
+    if (!currentChallenge) {
+      startChallenge();
+    } else {
+      const guess = msgIn.value.trim().toUpperCase();
+      if (guess === currentChallenge) {
+        correctCount++;
+        setStatus('Correct! ' + currentChallenge, true);
+        currentChallenge = null;
+        msgIn.value = '';
+        setTimeout(() => startChallenge(), 1200);
+      } else {
+        wrongCount++;
+        setStatus('Try again');
+        flashCount++;
+        if (flashCount >= 3) {
+          setStatus('It was: ' + currentChallenge, true);
+          currentChallenge = null;
+          msgIn.value = '';
+          setTimeout(() => startChallenge(), 1800);
+        }
+      }
+      updateScore();
+    }
+  } else if (currentMode === 'sendquiz' || currentMode === 'copy') {
+    if (!currentChallenge) {
+      if (currentMode === 'sendquiz') startSendQuiz();
+      else startCopy();
+    } else {
+      const decoded = decodeMorse(tapBuffer);
+      if (decoded === currentChallenge) {
+        sendScore += 10;
+        setStatus('Correct!', true);
+        currentChallenge = null;
+        clearTapBuffer();
+        setTimeout(() => {
+          if (currentMode === 'sendquiz') startSendQuiz();
+          else startCopy();
+        }, 1000);
+      } else {
+        setStatus('Not quite');
+        sendTryCount++;
+        if (sendTryCount >= 3) {
+          setStatus('Answer: ' + currentChallenge, true);
+          currentChallenge = null;
+          clearTapBuffer();
+          setTimeout(() => {
+            if (currentMode === 'sendquiz') startSendQuiz();
+            else startCopy();
+          }, 1800);
+        }
+      }
+      updateScore();
+    }
+  } else {
+    const text = msgIn.value.trim();
+    if (!text) return;
+    const morse = textToMorse(text);
+    if (currentMode === 'oneshot') {
+      playMorse(morse);
+    } else {
+      stopIdle();
+      playMorse(morse).then(() => {
+        if (currentMode === 'idle') startIdle();
+      });
+    }
+  }
+});
+
+againBtn.addEventListener('click', () => {
+  if (currentMode === 'learning' && currentChallenge) {
+    const morse = textToMorse(currentChallenge);
+    playMorse(morse);
+  } else if ((currentMode === 'sendquiz' || currentMode === 'copy') && currentChallenge) {
+    clearTapBuffer();
+    setStatus('Try again');
+  }
+});
+
+msgIn.addEventListener('keydown', e => {
+  if (e.key === 'Enter') playBtn.click();
+});
+
+function handleTap(isDot) {
+  const now = Date.now();
+  if (lastTapEnd && now - lastTapEnd > unit * 3) {
+    tapBuffer += ' ';
+  }
+  tapBuffer += isDot ? '.' : '-';
+  lastTapEnd = now;
+  updateMorseDisplay();
+  sessionSymbols++;
+}
+
+let pressStart = 0;
+eyeL.addEventListener('mousedown', () => { if (currentMode.startsWith('send') || currentMode === 'copy') pressStart = Date.now(); });
+eyeL.addEventListener('mouseup', () => {
+  if (currentMode.startsWith('send') || currentMode === 'copy' && pressStart) {
+    const duration = Date.now() - pressStart;
+    handleTap(duration < SHORT_THRESHOLD);
+    pressStart = 0;
+  }
+});
+eyeR.addEventListener('mousedown', () => { if (currentMode.startsWith('send') || currentMode === 'copy') pressStart = Date.now(); });
+eyeR.addEventListener('mouseup', () => {
+  if (currentMode.startsWith('send') || currentMode === 'copy' && pressStart) {
+    const duration = Date.now() - pressStart;
+    handleTap(duration < SHORT_THRESHOLD);
+    pressStart = 0;
+  }
+});
+
+let touchStart = 0;
+eyeL.addEventListener('touchstart', e => { if (currentMode.startsWith('send') || currentMode === 'copy') { e.preventDefault(); touchStart = Date.now(); } }, {passive:false});
+eyeL.addEventListener('touchend', e => {
+  if (currentMode.startsWith('send') || currentMode === 'copy') {
+    e.preventDefault();
+    const duration = Date.now() - touchStart;
+    handleTap(duration < SHORT_THRESHOLD);
+  }
+}, {passive:false});
+
+eyeR.addEventListener('touchstart', e => { if (currentMode.startsWith('send') || currentMode === 'copy') { e.preventDefault(); touchStart = Date.now(); } }, {passive:false});
+eyeR.addEventListener('touchend', e => {
+  if (currentMode.startsWith('send') || currentMode === 'copy') {
+    e.preventDefault();
+    const duration = Date.now() - touchStart;
+    handleTap(duration < SHORT_THRESHOLD);
+  }
+}, {passive:false});
+
+// ---- GIF export ----
+const downloadBtn = document.getElementById('downloadGif');
+
+function drawEyesToCanvas(ctx, w, h, on) {
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, w, h);
+  const c = on ? currentColor : 'rgba(255,255,255,0.12)';
+  ctx.fillStyle = c;
+  const shape = shapeSel.value;
+  const cx1 = w * 0.34, cx2 = w * 0.66, cy = h * 0.42, r = 28;
+  if (shape === 'circle' || shape === 'vpill' || shape === 'hpill') {
+    ctx.beginPath(); ctx.arc(cx1, cy, r, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx2, cy, r, 0, Math.PI * 2); ctx.fill();
+  } else if (shape === 'square') {
+    ctx.fillRect(cx1 - r, cy - r, r * 2, r * 2);
+    ctx.fillRect(cx2 - r, cy - r, r * 2, r * 2);
+  } else {
+    ctx.beginPath(); ctx.arc(cx1, cy, r, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx2, cy, r, 0, Math.PI * 2); ctx.fill();
+  }
+}
+
+async function createGif(text) {
+  if (!text || !text.trim()) return;
+  downloadBtn.textContent = 'Creating…';
+  downloadBtn.disabled = true;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 320;
+  canvas.height = 180;
+  const ctx = canvas.getContext('2d');
+
+  const gif = new GIF({
+    workers: 2,
+    quality: 12,
+    width: canvas.width,
+    height: canvas.height,
+    workerScript: 'https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js'
+  });
+
+  const clean = text.slice(0, 40).toUpperCase();
+  const unitMs = 110;
+
+  for (const ch of clean) {
+    const code = MORSE[ch] || '';
+    for (const sym of code) {
+      if (sym === '.') {
+        drawEyesToCanvas(ctx, canvas.width, canvas.height, true);
+        gif.addFrame(ctx, { delay: unitMs, copy: true });
+        drawEyesToCanvas(ctx, canvas.width, canvas.height, false);
+        gif.addFrame(ctx, { delay: unitMs, copy: true });
+      } else if (sym === '-') {
+        drawEyesToCanvas(ctx, canvas.width, canvas.height, true);
+        gif.addFrame(ctx, { delay: unitMs * 3, copy: true });
+        drawEyesToCanvas(ctx, canvas.width, canvas.height, false);
+        gif.addFrame(ctx, { delay: unitMs, copy: true });
+      }
+    }
+    drawEyesToCanvas(ctx, canvas.width, canvas.height, false);
+    gif.addFrame(ctx, { delay: unitMs * 2, copy: true });
+  }
+
+  return new Promise((resolve) => {
+    gif.on('finished', (blob) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'morse-' + clean.replace(/[^A-Z0-9]+/g, '-') + '.gif';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      downloadBtn.textContent = 'Download GIF';
+      downloadBtn.disabled = false;
+      resolve();
+    });
+    gif.render();
+  });
+}
+
+downloadBtn.addEventListener('click', () => {
+  const t = msgIn.value.trim();
+  if (t) createGif(t);
+});
+
+msgIn.addEventListener('input', () => {
+  downloadBtn.style.display = msgIn.value.trim() ? 'inline-block' : 'none';
+});
+
+redraw();
+updateUIForMode('idle');
+setModeDescription('Display Loop');
+startIdle();
+</script>
+</body>
+</html>
