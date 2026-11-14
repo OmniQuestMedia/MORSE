@@ -911,7 +911,7 @@ eyeR.addEventListener('touchend', e => {
 // ---- GIF export ----
 const downloadBtn = document.getElementById('downloadGif');
 
-function drawEyesToCanvas(ctx, w, h, on) {
+function drawEyesToCanvas(ctx, w, h, on, letter) {
   ctx.fillStyle = '#000';
   ctx.fillRect(0, 0, w, h);
   const c = on ? currentColor : 'rgba(255,255,255,0.12)';
@@ -993,10 +993,25 @@ function drawEyesToCanvas(ctx, w, h, on) {
     ctx.stroke();
   }
 
+  // Letter speech bubble
+  if (letter && letter !== ' ') {
+    const bx = w * 0.78, by = h * 0.28, bw = 64, bh = 48, br = 10;
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.roundRect(bx, by, bw, bh, br);
+    ctx.fill();
+    ctx.fillStyle = '#000000';
+    ctx.font = 'bold 28px Helvetica, Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(letter, bx + bw / 2, by + bh / 2 + 1);
+  }
+
   // Credit line (stacked)
   ctx.fillStyle = '#ffffff';
   ctx.font = '10px Helvetica, Arial, sans-serif';
   ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
   ctx.fillText('Edutainment Created by MORSE™', w / 2, h - 26);
   ctx.fillText('©2026 OmniQuest Media Inc. All rights reserved. Proudly Canadian.', w / 2, h - 10);
 }
@@ -1020,26 +1035,27 @@ async function createGif(text) {
   const unitMs = 110;
   const frames = [];
 
-  function addFrame(on) {
-    drawEyesToCanvas(ctx, canvas.width, canvas.height, on);
+  function addFrame(on, letter) {
+    drawEyesToCanvas(ctx, canvas.width, canvas.height, on, letter);
     frames.push(canvas.toDataURL('image/png'));
   }
 
   for (const ch of clean) {
     const code = MORSE[ch] || '';
+    const showLetter = (ch !== ' ') ? ch : null;
     for (const sym of code) {
       if (sym === '.') {
-        addFrame(true);
-        addFrame(false);
+        addFrame(true, showLetter);
+        addFrame(false, showLetter);
       } else if (sym === '-') {
-        addFrame(true);
-        addFrame(true);
-        addFrame(true);
-        addFrame(false);
+        addFrame(true, showLetter);
+        addFrame(true, showLetter);
+        addFrame(true, showLetter);
+        addFrame(false, showLetter);
       }
     }
-    addFrame(false);
-    addFrame(false);
+    addFrame(false, null);
+    addFrame(false, null);
   }
 
   gifshot.createGIF({
