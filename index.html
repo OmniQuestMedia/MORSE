@@ -869,7 +869,7 @@ function pickSendChallenge() {
   return EXPERT_PHRASES[Math.floor(Math.random()*EXPERT_PHRASES.length)];
 }
 
-async async function startCopyChallenge() {
+async function startCopyChallenge() {
   currentChallenge = pickSendChallenge();
   sendTryCount = 0;
   clearTapBuffer();
