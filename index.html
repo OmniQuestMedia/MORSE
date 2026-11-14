@@ -327,6 +327,7 @@
     <input type="text" id="hex" placeholder="#00e5ff" maxlength="7">
   </div>
   <label><input type="checkbox" id="hideLetter"> Hide letter</label>
+  <a href="https://99604f81-1777-4796-9c27-f07a2413cac7.usrfiles.com/ugd/99604f_d362d9dffb224ae79e3e49ee164be687.pdf" target="_blank" rel="noopener" style="display:block;text-align:center;padding:8px 10px;border-radius:6px;border:1px solid #444;background:#111;color:#fff;text-decoration:none;font-weight:600;margin-top:4px;">User Manual</a>
 </div>
 
 <div class="info">
@@ -567,481 +568,327 @@ function drawFeedback(el, type) {
   if (type === 'check') {
     el.innerHTML = `<svg viewBox="0 0 80 80"><path d="M20 40 L35 55 L60 25" fill="none" stroke="#00ff66" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
   } else if (type === 'x') {
-    el.innerHTML = `<svg viewBox="0 0 80 80"><path d="M25 25 L55 55 M55 25 L25 55" fill="none" stroke="#ff4444" stroke-width="8" stroke-linecap="round"/></svg>`;
+    el.innerHTML = `<svg viewBox="0 0 80 80"><path d="M20 20 L60 60 M60 20 L20 60" fill="none" stroke="#ff4444" stroke-width="8" stroke-linecap="round"/></svg>`;
   }
 }
 
-function drawMouth(type, color) {
-  const c = color || currentColor;
+function drawMouth(type) {
+  const c = currentColor;
   let svg = '';
-  if (type === 'neutral') svg = `<svg viewBox="0 0 90 28"><line x1="15" y1="14" x2="75" y2="14" stroke="${c}" stroke-width="4" stroke-linecap="round"/></svg>`;
-  else if (type === 'smile') svg = `<svg viewBox="0 0 90 28"><path d="M18 10 Q45 26 72 10" fill="none" stroke="${c}" stroke-width="4" stroke-linecap="round"/></svg>`;
-  else if (type === 'frown') svg = `<svg viewBox="0 0 90 28"><path d="M18 18 Q45 4 72 18" fill="none" stroke="${c}" stroke-width="4" stroke-linecap="round"/></svg>`;
-  else if (type === 'sneer') svg = `<svg viewBox="0 0 90 28"><path d="M20 16 L70 8" fill="none" stroke="${c}" stroke-width="4" stroke-linecap="round"/></svg>`;
-  else if (type === 'oh') svg = `<svg viewBox="0 0 90 28"><ellipse cx="45" cy="14" rx="10" ry="9" fill="none" stroke="${c}" stroke-width="3.5"/></svg>`;
+  if (type === 'smile') svg = `<svg viewBox="0 0 100 40"><path d="M15 12 Q50 36 85 12" fill="none" stroke="${c}" stroke-width="6" stroke-linecap="round"/></svg>`;
+  else if (type === 'neutral') svg = `<svg viewBox="0 0 100 40"><line x1="20" y1="20" x2="80" y2="20" stroke="${c}" stroke-width="6" stroke-linecap="round"/></svg>`;
+  else if (type === 'frown') svg = `<svg viewBox="0 0 100 40"><path d="M15 28 Q50 4 85 28" fill="none" stroke="${c}" stroke-width="6" stroke-linecap="round"/></svg>`;
+  else if (type === 'sneer') svg = `<svg viewBox="0 0 100 40"><path d="M20 22 Q40 10 55 20 Q70 30 80 18" fill="none" stroke="${c}" stroke-width="6" stroke-linecap="round"/></svg>`;
+  else if (type === 'oh') svg = `<svg viewBox="0 0 100 40"><ellipse cx="50" cy="20" rx="14" ry="10" fill="none" stroke="${c}" stroke-width="6"/></svg>`;
   mouthEl.innerHTML = svg;
 }
 
-function setEyes(on) {
-  const shape = shapeSel.value;
-  if (on) {
-    drawShape(eyeL, shape);
-    drawShape(eyeR, shape);
-  } else {
-    eyeL.innerHTML = '';
-    eyeR.innerHTML = '';
-  }
-}
-
-async function showFeedback(correct) {
-  const type = correct ? 'check' : 'x';
-  const feedbackColor = correct ? '#00ff66' : '#ff4444';
-  drawFeedback(eyeL, type);
-  drawFeedback(eyeR, type);
-  let mouthType = mouthSel.value;
-  if (!correct) {
-    const mouths = ['neutral', 'frown', 'sneer'];
-    mouthType = mouths[Math.floor(Math.random() * mouths.length)];
-  }
-  drawMouth(mouthType, feedbackColor);
-  await sleep(1200);
-  setEyes(false);
-  drawMouth(mouthSel.value);
-}
-
-function updateColor(c) {
+function applyColor(c) {
   currentColor = c;
   colorIn.value = c;
   hexIn.value = c;
-  if (eyeL.innerHTML && !currentChallenge) setEyes(true);
-  drawMouth(mouthSel.value);
-  if (statusEl.classList.contains('reveal') || statusEl.classList.contains('mode-desc')) {
-    statusEl.style.color = c;
-  }
-  if (currentMode === 'learning') {
-    scoreEl.style.color = c;
-    learningPrompt.style.color = c;
-  }
+  redraw();
 }
 
-colorIn.addEventListener('input', e => updateColor(e.target.value));
-hexIn.addEventListener('change', e => {
-  let v = e.target.value.trim();
-  if (!v.startsWith('#')) v = '#' + v;
-  if (/^#[0-9A-Fa-f]{6}$/.test(v)) updateColor(v);
-});
-shapeSel.addEventListener('change', () => { if (eyeL.innerHTML && !currentChallenge) setEyes(true); });
-mouthSel.addEventListener('change', () => drawMouth(mouthSel.value));
+function redraw() {
+  drawShape(eyeL, shapeSel.value);
+  drawShape(eyeR, shapeSel.value);
+  drawMouth(mouthSel.value);
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function flashOn(ms) {
+  eyeL.style.opacity = 1;
+  eyeR.style.opacity = 1;
+  await sleep(ms);
+  eyeL.style.opacity = 0.15;
+  eyeR.style.opacity = 0.15;
+}
+
+async function playSymbol(sym) {
+  if (sym === '.') await flashOn(unit);
+  else if (sym === '-') await flashOn(unit * 3);
+  await sleep(unit);
+}
+
+async function playMorse(morse) {
+  if (running) return;
+  running = true;
+  eyeL.style.opacity = 0.15;
+  eyeR.style.opacity = 0.15;
+  const parts = morse.split(' ');
+  for (const part of parts) {
+    if (!running) break;
+    if (part === '/') {
+      await sleep(unit * 4);
+      continue;
+    }
+    for (const sym of part) {
+      if (!running) break;
+      await playSymbol(sym);
+    }
+    await sleep(unit * 2);
+  }
+  eyeL.style.opacity = 1;
+  eyeR.style.opacity = 1;
+  running = false;
+}
+
+function startIdle() {
+  stopIdle();
+  const phrases = ['HELLO','MORSE','CODE','FLASH','EYES','SMILE'];
+  let i = 0;
+  function loop() {
+    if (currentMode !== 'idle') return;
+    const phrase = phrases[i % phrases.length];
+    i++;
+    const morse = textToMorse(phrase);
+    playMorse(morse).then(() => {
+      if (currentMode === 'idle') idleTimer = setTimeout(loop, 2000);
+    });
+  }
+  idleTimer = setTimeout(loop, 500);
+}
+
+function stopIdle() {
+  if (idleTimer) clearTimeout(idleTimer);
+  idleTimer = null;
+  running = false;
+}
+
+function pickChallenge() {
+  const type = challengeType.value;
+  let pool;
+  if (type === 'letters') pool = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.split('');
+  else if (type === 'words5') pool = WORDS5;
+  else if (type === 'words8') pool = WORDS8;
+  else pool = WORDS12;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function pickSendChallenge() {
+  const diff = sendDifficulty.value;
+  let pool;
+  if (diff === 'learner') pool = WORDS5;
+  else if (diff === 'beginner') pool = WORDS8;
+  else if (diff === 'challenger') pool = WORDS12;
+  else pool = EXPERT_PHRASES;
+  if (customPhrases.length) pool = customPhrases;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function startChallenge() {
+  currentChallenge = pickChallenge();
+  const morse = textToMorse(currentChallenge);
+  morseDisplay.textContent = morse;
+  flashCount = 0;
+  playMorse(morse);
+  playBtn.textContent = 'Submit Guess';
+  againBtn.style.display = 'block';
+  setStatus('Listen and guess...');
+}
+
+function startSendQuiz() {
+  currentChallenge = pickSendChallenge();
+  sendTarget.textContent = currentChallenge;
+  clearTapBuffer();
+  sendTryCount = 0;
+  playBtn.textContent = 'Submit';
+  againBtn.style.display = 'block';
+  setStatus('Tap it out...');
+}
+
+function startCopy() {
+  currentChallenge = pickSendChallenge();
+  const morse = textToMorse(currentChallenge);
+  morseDisplay.textContent = morse;
+  sendTarget.textContent = '';
+  clearTapBuffer();
+  playBtn.textContent = 'Submit Copy';
+  againBtn.style.display = 'block';
+  setStatus('Copy the code...');
+}
 
 panelToggle.addEventListener('click', () => {
   controls.classList.toggle('open');
   panelToggle.textContent = controls.classList.contains('open') ? 'Hide' : 'Controls';
 });
 
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+shapeSel.addEventListener('change', redraw);
+mouthSel.addEventListener('change', redraw);
 
-function ensureAudio() {
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if (audioCtx.state === 'suspended') audioCtx.resume();
-}
+colorIn.addEventListener('input', e => applyColor(e.target.value));
+hexIn.addEventListener('change', () => {
+  let v = hexIn.value.trim();
+  if (!v.startsWith('#')) v = '#' + v;
+  if (/^#[0-9a-fA-F]{6}$/.test(v)) applyColor(v);
+});
 
-function playTone(durationMs, freq = 600) {
-  try {
-    ensureAudio();
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.type = 'sine';
-    osc.frequency.value = freq;
-    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + durationMs / 1000);
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start();
-    osc.stop(audioCtx.currentTime + durationMs / 1000);
-  } catch (e) {}
-}
-
-async function flashChar(ch) {
-  const code = MORSE[ch.toUpperCase()] || '';
-  const show = !hideLetter.checked && ch !== ' ';
-  if (show) {
-    letterEl.textContent = ch.toUpperCase();
-    letterEl.style.opacity = '1';
-  }
-  for (const sym of code) {
-    if (sym === '.') { setEyes(true); await sleep(unit); setEyes(false); await sleep(unit); }
-    else if (sym === '-') { setEyes(true); await sleep(unit * 3); setEyes(false); await sleep(unit); }
-    else if (sym === ' ') { await sleep(unit * 2); }
-  }
-  letterEl.style.opacity = '0';
-  await sleep(unit * 2);
-}
-
-async function flashWord(word) {
-  for (const ch of word) {
-    await flashChar(ch);
-  }
-}
-
-async function flashMorseString(morse) {
-  // Flash a raw Morse string (dots, dashes, spaces)
-  const cleaned = morse.trim();
-  for (const sym of cleaned) {
-    if (sym === '.') { setEyes(true); await sleep(unit); setEyes(false); await sleep(unit); }
-    else if (sym === '-') { setEyes(true); await sleep(unit * 3); setEyes(false); await sleep(unit); }
-    else if (sym === ' ' || sym === '/') { await sleep(unit * 3); }
-  }
-  await sleep(200);
-}
-
-async function transmit(text) {
-  if (running) return;
-  running = true;
+modeSel.addEventListener('change', () => {
+  currentMode = modeSel.value;
   stopIdle();
-  const clean = text.slice(0, 40).toUpperCase();
-  setStatus('Flashing...');
-  for (const ch of clean) await flashChar(ch);
-  await sleep(500);
-  running = false;
-  setStatus('');
-  if (currentMode === 'idle') startIdle();
-}
-
-const idlePhrases = ["HI! I'M MORSE", "LET ME SAY IT!", "WELCOME"];
-let idleIndex = 0;
-
-async function idleLoop() {
-  if (running || currentMode !== 'idle') return;
-  const phrase = idlePhrases[idleIndex];
-  idleIndex = (idleIndex + 1) % idlePhrases.length;
-  for (const ch of phrase) {
-    if (running || currentMode !== 'idle') return;
-    await flashChar(ch);
-  }
-  await sleep(1400);
-  if (!running && currentMode === 'idle') idleTimer = setTimeout(idleLoop, 80);
-}
-
-function startIdle() { stopIdle(); idleIndex = 0; idleTimer = setTimeout(idleLoop, 300); }
-function stopIdle() { if (idleTimer) clearTimeout(idleTimer); idleTimer = null; }
-
-function pickChallenge() {
-  const type = challengeType.value;
-  if (type === 'letters') {
-    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    return letters[Math.floor(Math.random() * letters.length)];
-  } else if (type === 'words5') {
-    return WORDS5[Math.floor(Math.random() * WORDS5.length)];
-  } else if (type === 'words8') {
-    return WORDS8[Math.floor(Math.random() * WORDS8.length)];
-  } else if (type === 'words12') {
-    return WORDS12[Math.floor(Math.random() * WORDS12.length)];
-  }
-  return 'A';
-}
-
-async function flashCurrentChallenge() {
-  if (!currentChallenge) return;
-  setStatus(`Watch... (${flashCount + 1}/3)`);
-  if (currentChallenge.length === 1) {
-    await flashChar(currentChallenge);
-  } else {
-    await flashWord(currentChallenge);
-  }
-  flashCount++;
-  await sleep(400);
-  setStatus('What was it?');
-}
-
-async function startLearningChallenge() {
-  if (running) return;
-  running = true;
-  stopIdle();
-  currentChallenge = pickChallenge();
-  flashCount = 0;
-  clearTapBuffer();
-  await flashCurrentChallenge();
-  running = false;
-  setEyes(true);  // persist eyes while user answers
-  updateUIForMode('learning');
-}
-
-async function replayChallenge() {
-  if (!currentChallenge || running || flashCount >= 3) return;
-  running = true;
-  await flashCurrentChallenge();
-  running = false;
-  if (flashCount >= 3) {
-    setStatus('Max flashes reached');
-  }
-  updateUIForMode('learning');
-}
-
-function getExpectedMorse() {
-  if (!currentChallenge) return '';
-  if (currentChallenge.length === 1) return MORSE[currentChallenge] || '';
-  return currentChallenge.split('').map(c => MORSE[c] || '').join(' ');
-}
-
-async function checkGuess() {
-  if (!currentChallenge || running) return;
-  const typed = msgIn.value.trim().toUpperCase();
-  const tapped = tapBuffer.trim();
-  let correct = false;
-  let usedTap = false;
-  let toFlash = '';
-
-  if (tapped) {
-    usedTap = true;
-    correct = tapped.replace(/\s|\//g, '') === getExpectedMorse().replace(/\s|\//g, '');
-    toFlash = tapped;
-  } else if (typed) {
-    correct = typed === currentChallenge;
-    toFlash = textToMorse(typed);
-  } else {
-    setStatus('Type a letter/word or tap Morse with Space/Enter');
-    return;
-  }
-
-  running = true;
-  setEyes(true);
-  setStatus('Flashing your answer...');
-  if (toFlash) await flashMorseString(toFlash);
-  if (correct) correctCount++; else wrongCount++;
-  await showFeedback(correct);
-  if (correct) {
-    setStatus(usedTap ? 'Correct Morse!' : 'Correct!', true);
-  } else {
-    const expected = getExpectedMorse();
-    setStatus(`That was ${currentChallenge}. Code: ${expected}`, true);
-  }
-  updateScore();
-  msgIn.value = '';
-  clearTapBuffer();
   currentChallenge = null;
-  flashCount = 0;
-  running = false;
-  updateUIForMode('learning');
-  setTimeout(() => setStatus('Press Ready For Next Guess'), 2500);
-}
-
-function getCustomList() {
-  const raw = customListIn.value.trim();
-  if (!raw) return [];
-  return raw.split(',').map(s => s.trim().toUpperCase()).filter(s => s.length > 0 && s.length <= 40);
-}
-
-function pickSendChallenge() {
-  const customs = getCustomList();
-  if (customs.length) return customs[Math.floor(Math.random()*customs.length)];
-  const diff = sendDifficulty.value;
-  if (diff === 'learner') return WORDS5[Math.floor(Math.random()*WORDS5.length)];
-  if (diff === 'beginner') return WORDS8[Math.floor(Math.random()*WORDS8.length)];
-  if (diff === 'challenger') return WORDS12[Math.floor(Math.random()*WORDS12.length)];
-  return EXPERT_PHRASES[Math.floor(Math.random()*EXPERT_PHRASES.length)];
-}
-
-async function startCopyChallenge() {
-  currentChallenge = pickSendChallenge();
-  sendTryCount = 0;
+  resetScore();
   clearTapBuffer();
-  sendTarget.textContent = currentChallenge;
-  setStatus('Watch the flash, then send it back...');
-  updateUIForMode('copy');
-  // Flash it first
-  await flashWord(currentChallenge.replace(/ /g, '')); // simple flash
-  setStatus('Now send it back. Tap then Submit Copy.');
-  setEyes(true);
-}
-
-function startSendQuiz() {
-  currentChallenge = pickSendChallenge();
-  sendTryCount = 0;
-  clearTapBuffer();
-  sendTarget.textContent = currentChallenge;
-  setStatus('Tap the code, then Submit');
-  setEyes(true);
-  updateUIForMode('sendquiz');
-}
-
-async function checkSendQuiz() {
-  if (!currentChallenge || running) return;
-  const expected = textToMorse(currentChallenge).replace(/\s|\//g, '');
-  const user = tapBuffer.trim().replace(/\s|\//g, '');
-  const correct = user === expected;
-  sendTryCount++;
-  sessionAttempts++;
-  if (correct) sessionCorrect++;
-
-  running = true;
-  setEyes(true);
-  setStatus('Flashing your answer...');
-  if (user) await flashMorseString(user);
-  await showFeedback(correct);
-
-  if (correct) {
-    const pts = Math.max(1, 4 - sendTryCount);
-    sendScore += pts;
-    setStatus(`Correct! +${pts} points`, true);
-    currentChallenge = null;
-    clearTapBuffer();
-    updateScore();
-    updateUIForMode(currentMode);
-    setTimeout(() => setStatus(currentMode === 'copy' ? 'Press Start Copy for next' : 'Press Start Quiz for next'), 2000);
-  } else if (sendTryCount >= 3) {
-    setStatus(`Wrong. It was ${currentChallenge}. Code: ${expected}`, true);
-    currentChallenge = null;
-    clearTapBuffer();
-    updateUIForMode(currentMode);
-    setTimeout(() => setStatus(currentMode === 'copy' ? 'Press Start Copy for next' : 'Press Start Quiz for next'), 3000);
-  } else {
-    setStatus(`Wrong. Try again (${sendTryCount}/3)`);
-    setEyes(true);  // keep eyes for next try
-  }
-  updateScore();
-  running = false;
-}
-
-function showHint() {
-  if (!currentChallenge) return;
-  const expected = textToMorse(currentChallenge);
-  setStatus(`${currentChallenge} → ${expected}`, true);
-}
-
-function setMode(mode) {
-  currentMode = mode;
-  stopIdle();
-  running = false;
-  currentChallenge = null;
-  flashCount = 0;
-  clearTapBuffer();
-  setStatus('');
-  sessionSymbols = 0;
-  sessionCorrect = 0;
-  sessionAttempts = 0;
-  sessionStart = Date.now();
-  updateStats();
-  updateUIForMode(mode);
-  if (mode === 'idle') {
+  updateUIForMode(currentMode);
+  if (currentMode === 'idle') {
+    setModeDescription('Display Loop');
     startIdle();
-    setModeDescription('Type a phrase, code display repeats.');
-  } else if (mode === 'oneshot') {
-    setModeDescription('Type a phrase, code displays once.');
-  } else if (mode === 'learning') {
-    setStatus('');
-  } else if (mode === 'send') {
-    setModeDescription('Tap Space or Enter: short = dot, long = dash. Hit Submit when finished.');
-    clearTapBuffer();
-  } else if (mode === 'sendquiz') {
-    setStatus('Choose difficulty and press Start Quiz');
-    sendTarget.textContent = '';
-    clearTapBuffer();
-  } else if (mode === 'copy') {
-    setStatus('Press Start Copy to flash then send back');
-    sendTarget.textContent = '';
-    clearTapBuffer();
-  }
-}
-
-modeSel.addEventListener('change', () => setMode(modeSel.value));
-
-challengeType.addEventListener('change', () => {
-  if (currentMode === 'learning') {
-    resetScore();
-    currentChallenge = null;
-    flashCount = 0;
-    clearTapBuffer();
-    updateUIForMode('learning');
-    setStatus('Type changed — score reset. Press Ready');
+  } else if (currentMode === 'oneshot') {
+    setModeDescription('One-shot');
+  } else if (currentMode === 'learning') {
+    setModeDescription('Receive');
+  } else if (currentMode === 'send') {
+    setModeDescription('Send');
+  } else if (currentMode === 'sendquiz') {
+    setModeDescription('Send Quiz');
+  } else if (currentMode === 'copy') {
+    setModeDescription('Copy This');
   }
 });
 
 playBtn.addEventListener('click', () => {
-  if (currentMode === 'oneshot' || currentMode === 'idle') {
-    const t = msgIn.value.trim();
-    if (t) transmit(t);
-    else if (currentMode === 'idle') setStatus('Type a phrase or wait for display loop');
-  } else if (currentMode === 'learning') {
-    if (currentChallenge) checkGuess();
-    else startLearningChallenge();
+  if (currentMode === 'learning') {
+    if (!currentChallenge) {
+      startChallenge();
+    } else {
+      const guess = msgIn.value.trim().toUpperCase();
+      if (guess === currentChallenge) {
+        correctCount++;
+        setStatus('Correct! ' + currentChallenge, true);
+        drawFeedback(eyeL, 'check');
+        drawFeedback(eyeR, 'check');
+        setTimeout(redraw, 800);
+      } else {
+        wrongCount++;
+        setStatus('Wrong. It was ' + currentChallenge, true);
+        drawFeedback(eyeL, 'x');
+        drawFeedback(eyeR, 'x');
+        setTimeout(redraw, 800);
+      }
+      updateScore();
+      currentChallenge = null;
+      playBtn.textContent = 'Ready';
+      againBtn.style.display = 'none';
+      msgIn.value = '';
+    }
+  } else if (currentMode === 'sendquiz') {
+    if (!currentChallenge) {
+      startSendQuiz();
+    } else {
+      const decoded = decodeMorse(tapBuffer);
+      if (decoded === currentChallenge) {
+        sendScore += 10;
+        sessionCorrect++;
+        setStatus('Correct! +10', true);
+      } else {
+        setStatus('Not quite. Try again or skip.', true);
+      }
+      sessionAttempts++;
+      updateScore();
+      updateStats();
+      currentChallenge = null;
+      playBtn.textContent = 'Start Quiz';
+      againBtn.style.display = 'none';
+      clearTapBuffer();
+    }
+  } else if (currentMode === 'copy') {
+    if (!currentChallenge) {
+      startCopy();
+    } else {
+      const targetMorse = textToMorse(currentChallenge);
+      if (tapBuffer.trim() === targetMorse) {
+        sessionCorrect++;
+        setStatus('Perfect copy!', true);
+      } else {
+        setStatus('Close. Keep practicing.', true);
+      }
+      sessionAttempts++;
+      updateStats();
+      currentChallenge = null;
+      playBtn.textContent = 'Start Copy';
+      againBtn.style.display = 'none';
+      clearTapBuffer();
+    }
   } else if (currentMode === 'send') {
     clearTapBuffer();
-    setStatus('Cleared. Keep practicing.');
-  } else if (currentMode === 'sendquiz') {
-    if (currentChallenge) checkSendQuiz();
-    else startSendQuiz();
-  } else if (currentMode === 'copy') {
-    if (currentChallenge) checkSendQuiz();
-    else startCopyChallenge();
+    setStatus('Cleared. Tap to practice.');
+  } else {
+    const text = msgIn.value.trim() || 'MORSE';
+    const morse = textToMorse(text);
+    playMorse(morse);
   }
 });
 
 againBtn.addEventListener('click', () => {
-  if (currentMode === 'learning' && currentChallenge) {
-    replayChallenge();
+  if (currentMode === 'learning') startChallenge();
+  else if (currentMode === 'sendquiz') startSendQuiz();
+  else if (currentMode === 'copy') startCopy();
+});
+
+clearSendBtn.addEventListener('click', clearTapBuffer);
+
+hintBtn.addEventListener('click', () => {
+  if (currentChallenge) {
+    const morse = textToMorse(currentChallenge);
+    setStatus(morse, true);
   }
 });
 
-msgIn.addEventListener('keydown', e => {
-  if (e.key === 'Enter') playBtn.click();
-});
-msgIn.addEventListener('input', () => {
-  if (currentMode === 'learning' && currentChallenge) setEyes(true);
+customListIn.addEventListener('change', () => {
+  customPhrases = customListIn.value.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
 });
 
+function handleTap(isShort) {
+  const now = Date.now();
+  if (lastTapEnd && now - lastTapEnd > unit * 4) {
+    tapBuffer += ' / ';
+  }
+  tapBuffer += isShort ? '.' : '-';
+  lastTapEnd = now;
+  sessionSymbols++;
+  updateMorseDisplay();
+}
+
 document.addEventListener('keydown', e => {
-  const allowTap = (currentMode === 'learning' && currentChallenge) || currentMode === 'send' || (currentMode === 'sendquiz' && currentChallenge);
-  if (!allowTap) return;
-  if ((e.key === ' ' || e.key === 'Enter') && !tapStart) {
+  if (e.code === 'Space' && !e.repeat && (currentMode === 'send' || currentMode === 'sendquiz' || currentMode === 'copy')) {
     e.preventDefault();
     tapStart = Date.now();
-    setEyes(true);
-    updateMorseDisplay('·');
-    if (holdTimer) clearTimeout(holdTimer);
-    holdTimer = setTimeout(() => {
-      if (tapStart) updateMorseDisplay('-');
-    }, SHORT_THRESHOLD);
   }
 });
 
 document.addEventListener('keyup', e => {
-  const allowTap = (currentMode === 'learning' && currentChallenge) || currentMode === 'send' || (currentMode === 'sendquiz' && currentChallenge);
-  if (!allowTap || !tapStart) return;
-  if (e.key === ' ' || e.key === 'Enter') {
+  if (e.code === 'Space' && (currentMode === 'send' || currentMode === 'sendquiz' || currentMode === 'copy')) {
+    e.preventDefault();
     const duration = Date.now() - tapStart;
-    const symbol = duration < SHORT_THRESHOLD ? '.' : '-';
-    tapBuffer += symbol;
-    sessionSymbols++;
-    playTone(duration < SHORT_THRESHOLD ? 80 : 220);
-    updateMorseDisplay();
-    tapStart = 0;
-    if (holdTimer) {
-      clearTimeout(holdTimer);
-      holdTimer = null;
-    }
+    handleTap(duration < SHORT_THRESHOLD);
   }
 });
 
-hintBtn.addEventListener('click', showHint);
-clearSendBtn.addEventListener('click', () => {
-  clearTapBuffer();
-  if (currentMode === 'sendquiz' && currentChallenge) setStatus('Cleared. Tap again.');
-});
-
-sendDifficulty.addEventListener('change', () => {
-  if (currentMode === 'sendquiz') {
-    currentChallenge = null;
-    clearTapBuffer();
-    sendTarget.textContent = '';
-    updateUIForMode('sendquiz');
-    setStatus('Difficulty changed. Press Start Quiz.');
+let touchStart = 0;
+eyeL.addEventListener('touchstart', e => { if (currentMode.startsWith('send') || currentMode === 'copy') { e.preventDefault(); touchStart = Date.now(); } }, {passive:false});
+eyeL.addEventListener('touchend', e => {
+  if (currentMode.startsWith('send') || currentMode === 'copy') {
+    e.preventDefault();
+    const duration = Date.now() - touchStart;
+    handleTap(duration < SHORT_THRESHOLD);
   }
-});
+}, {passive:false});
 
-updateColor('#00e5ff');
-drawMouth('smile');
-setEyes(false);
-setMode('idle');
+eyeR.addEventListener('touchstart', e => { if (currentMode.startsWith('send') || currentMode === 'copy') { e.preventDefault(); touchStart = Date.now(); } }, {passive:false});
+eyeR.addEventListener('touchend', e => {
+  if (currentMode.startsWith('send') || currentMode === 'copy') {
+    e.preventDefault();
+    const duration = Date.now() - touchStart;
+    handleTap(duration < SHORT_THRESHOLD);
+  }
+}, {passive:false});
+
+redraw();
+updateUIForMode('idle');
+setModeDescription('Display Loop');
+startIdle();
 </script>
 </body>
 </html>
