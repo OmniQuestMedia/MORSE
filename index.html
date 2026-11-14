@@ -197,11 +197,13 @@
     overflow-wrap: break-word;
   }
   #status {
-    margin-top: 4px;
+    margin-top: 0;
+    margin-bottom: 4px;
     font-size: 0.9rem;
     color: #aaa;
     min-height: 0.4em;
     text-align: center;
+    width: 100%;
   }
   #status.reveal {
     font-size: 16px;
@@ -232,12 +234,12 @@
   <div id="input-row">
     <div id="hint">Type a phrase or leave Morse looping.<br>He’ll flash it with his eyes.</div>
     <div id="morse-display"></div>
+    <div id="status"></div>
     <input type="text" id="msg" placeholder="Type a phrase (max 40)" maxlength="40">
     <div id="button-row">
       <button id="again">Again</button>
       <button id="play">Play / Flash</button>
     </div>
-    <div id="status"></div>
     <div id="score"></div>
     <select id="challenge-type">
       <option value="letters" selected>Letters & Numbers</option>
