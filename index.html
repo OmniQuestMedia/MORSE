@@ -13,19 +13,25 @@
     color: #e0e0e0;
     line-height: 1.5;
     min-height: 100vh;
+    display: flex;
+    flex-direction: column;
   }
   #app {
     position: relative;
-    padding: 24px 12px 16px;
+    padding: 12vh 12px 16px;
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
+    flex: 1;
+    min-height: 50vh;
   }
   #face {
     display: flex;
     flex-direction: column;
     align-items: center;
     position: relative;
+    margin-top: 4vh;
   }
   #eyes-wrap {
     display: flex;
@@ -351,8 +357,6 @@ async function learningMode() {
 
 async function receiveMode() {
   setStatus('Receive mode: ready (basic placeholder — flash a known phrase to test)');
-  // Placeholder: user can still type and flash to practice decoding visually
-  // Full audio/camera decode can be added later
 }
 
 function setMode(mode) {
