@@ -711,6 +711,17 @@ async function flashWord(word) {
   }
 }
 
+async function flashMorseString(morse) {
+  // Flash a raw Morse string (dots, dashes, spaces)
+  const cleaned = morse.trim();
+  for (const sym of cleaned) {
+    if (sym === '.') { setEyes(true); await sleep(unit); setEyes(false); await sleep(unit); }
+    else if (sym === '-') { setEyes(true); await sleep(unit * 3); setEyes(false); await sleep(unit); }
+    else if (sym === ' ' || sym === '/') { await sleep(unit * 3); }
+  }
+  await sleep(200);
+}
+
 async function transmit(text) {
   if (running) return;
   running = true;
@@ -779,6 +790,7 @@ async function startLearningChallenge() {
   clearTapBuffer();
   await flashCurrentChallenge();
   running = false;
+  setEyes(true);  // persist eyes while user answers
   updateUIForMode('learning');
 }
 
@@ -805,18 +817,24 @@ async function checkGuess() {
   const tapped = tapBuffer.trim();
   let correct = false;
   let usedTap = false;
+  let toFlash = '';
 
   if (tapped) {
     usedTap = true;
     correct = tapped === getExpectedMorse();
+    toFlash = tapped;
   } else if (typed) {
     correct = typed === currentChallenge;
+    toFlash = textToMorse(typed);
   } else {
     setStatus('Type a letter/word or tap Morse with Space/Enter');
     return;
   }
 
   running = true;
+  setEyes(true);
+  setStatus('Flashing your answer...');
+  if (toFlash) await flashMorseString(toFlash);
   if (correct) correctCount++; else wrongCount++;
   await showFeedback(correct);
   if (correct) {
@@ -861,6 +879,7 @@ async async function startCopyChallenge() {
   // Flash it first
   await flashWord(currentChallenge.replace(/ /g, '')); // simple flash
   setStatus('Now send it back. Tap then Submit Copy.');
+  setEyes(true);
 }
 
 function startSendQuiz() {
@@ -869,17 +888,25 @@ function startSendQuiz() {
   clearTapBuffer();
   sendTarget.textContent = currentChallenge;
   setStatus('Tap the code, then Submit');
+  setEyes(true);
   updateUIForMode('sendquiz');
 }
 
-function checkSendQuiz() {
-  if (!currentChallenge) return;
+async function checkSendQuiz() {
+  if (!currentChallenge || running) return;
   const expected = textToMorse(currentChallenge);
   const user = tapBuffer.trim().replace(/\s+/g, ' ');
   const correct = user === expected;
   sendTryCount++;
   sessionAttempts++;
   if (correct) sessionCorrect++;
+
+  running = true;
+  setEyes(true);
+  setStatus('Flashing your answer...');
+  if (user) await flashMorseString(user);
+  await showFeedback(correct);
+
   if (correct) {
     const pts = Math.max(1, 4 - sendTryCount);
     sendScore += pts;
@@ -887,18 +914,20 @@ function checkSendQuiz() {
     currentChallenge = null;
     clearTapBuffer();
     updateScore();
-    updateUIForMode('sendquiz');
-    setTimeout(() => setStatus('Press Start Quiz for next'), 2000);
+    updateUIForMode(currentMode);
+    setTimeout(() => setStatus(currentMode === 'copy' ? 'Press Start Copy for next' : 'Press Start Quiz for next'), 2000);
   } else if (sendTryCount >= 3) {
     setStatus(`Wrong. It was ${currentChallenge}. Code: ${expected}`, true);
     currentChallenge = null;
     clearTapBuffer();
-    updateUIForMode('sendquiz');
-    setTimeout(() => setStatus('Press Start Quiz for next'), 3000);
+    updateUIForMode(currentMode);
+    setTimeout(() => setStatus(currentMode === 'copy' ? 'Press Start Copy for next' : 'Press Start Quiz for next'), 3000);
   } else {
     setStatus(`Wrong. Try again (${sendTryCount}/3)`);
+    setEyes(true);  // keep eyes for next try
   }
   updateScore();
+  running = false;
 }
 
 function showHint() {
@@ -984,6 +1013,9 @@ againBtn.addEventListener('click', () => {
 msgIn.addEventListener('keydown', e => {
   if (e.key === 'Enter') playBtn.click();
 });
+msgIn.addEventListener('input', () => {
+  if (currentMode === 'learning' && currentChallenge) setEyes(true);
+});
 
 document.addEventListener('keydown', e => {
   const allowTap = (currentMode === 'learning' && currentChallenge) || currentMode === 'send' || (currentMode === 'sendquiz' && currentChallenge);
@@ -991,6 +1023,7 @@ document.addEventListener('keydown', e => {
   if ((e.key === ' ' || e.key === 'Enter') && !tapStart) {
     e.preventDefault();
     tapStart = Date.now();
+    setEyes(true);
     updateMorseDisplay('·');
     if (holdTimer) clearTimeout(holdTimer);
     holdTimer = setTimeout(() => {
