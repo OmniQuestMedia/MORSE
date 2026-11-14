@@ -247,21 +247,7 @@
     padding: 6px 8px;
     display: none;
   }
-  #auto-space-label {
-    font-size: 0.85rem;
-    color: #aaa;
-    display: none;
-    align-items: center;
-    gap: 6px;
-  }
 
-  #decoded {
-    font-size: 0.95rem;
-    color: #ccc;
-    text-align: center;
-    min-height: 1.2em;
-    display: none;
-  }
 </style>
 </head>
 <body>
@@ -283,7 +269,6 @@
     <div id="hint">Type a phrase or leave Morse looping.<br>He’ll flash it with his eyes.</div>
     <div id="send-target"></div>
     <div id="morse-display"></div>
-    <div id="decoded"></div>
     <div id="status"></div>
     <input type="text" id="msg" placeholder="Type a phrase (max 40)" maxlength="40">
     <div id="button-row">
@@ -305,12 +290,9 @@
       <option value="expert">Expert</option>
     </select>
     <div id="send-controls" style="display:none;width:100%;display:flex;gap:6px;flex-wrap:wrap;justify-content:center;">
-      <button id="letter-space" type="button" style="flex:1;min-width:90px;">Letter Space</button>
-      <button id="word-space" type="button" style="flex:1;min-width:90px;">Word Space</button>
       <button id="hint-btn" type="button" style="flex:1;min-width:70px;display:none;">Hint</button>
       <button id="clear-send" type="button" style="flex:1;min-width:70px;">Clear</button>
     </div>
-    <label id="auto-space-label"><input type="checkbox" id="auto-space"> Auto spacing (pause detection)</label>
     <div id="stats"></div>
     <input type="text" id="custom-list" placeholder="Custom phrases, comma separated (e.g. HELLO, GREEN, MORSE CODE)">
   </div>
@@ -416,13 +398,8 @@ const learningPrompt = document.getElementById('learning-prompt');
 const sendDifficulty = document.getElementById('send-difficulty');
 const sendControls = document.getElementById('send-controls');
 const sendTarget = document.getElementById('send-target');
-const decodedEl = document.getElementById('decoded');
-const letterSpaceBtn = document.getElementById('letter-space');
-const wordSpaceBtn = document.getElementById('word-space');
 const hintBtn = document.getElementById('hint-btn');
 const clearSendBtn = document.getElementById('clear-send');
-const autoSpaceChk = document.getElementById('auto-space');
-const autoSpaceLabel = document.getElementById('auto-space-label');
 const statsEl = document.getElementById('stats');
 const customListIn = document.getElementById('custom-list');
 
@@ -491,9 +468,7 @@ function updateUIForMode(mode) {
   sendControls.style.display = isSend ? 'flex' : 'none';
   sendDifficulty.style.display = (mode === 'sendquiz' || mode === 'copy') ? 'block' : 'none';
   sendTarget.style.display = (mode === 'sendquiz' || mode === 'copy') ? 'block' : 'none';
-  decodedEl.style.display = isSend ? 'block' : 'none';
   hintBtn.style.display = (mode === 'sendquiz' || mode === 'copy') ? 'block' : 'none';
-  autoSpaceLabel.style.display = isSend ? 'flex' : 'none';
   customListIn.style.display = (mode === 'sendquiz' || mode === 'copy') ? 'block' : 'none';
   if (mode === 'learning') {
     challengeType.style.display = 'block';
@@ -561,9 +536,6 @@ function updateUIForMode(mode) {
 function updateMorseDisplay(preview = '') {
   const full = (tapBuffer || '') + preview;
   morseDisplay.textContent = full;
-  if (currentMode === 'send' || currentMode === 'sendquiz' || currentMode === 'copy') {
-    decodedEl.textContent = decodeMorse(full) || '(decoded)';
-  }
   updateStats();
 }
 
@@ -821,7 +793,7 @@ async function checkGuess() {
 
   if (tapped) {
     usedTap = true;
-    correct = tapped === getExpectedMorse();
+    correct = tapped.replace(/\s|\//g, '') === getExpectedMorse().replace(/\s|\//g, '');
     toFlash = tapped;
   } else if (typed) {
     correct = typed === currentChallenge;
@@ -894,8 +866,8 @@ function startSendQuiz() {
 
 async function checkSendQuiz() {
   if (!currentChallenge || running) return;
-  const expected = textToMorse(currentChallenge);
-  const user = tapBuffer.trim().replace(/\s+/g, ' ');
+  const expected = textToMorse(currentChallenge).replace(/\s|\//g, '');
+  const user = tapBuffer.trim().replace(/\s|\//g, '');
   const correct = user === expected;
   sendTryCount++;
   sessionAttempts++;
@@ -958,7 +930,7 @@ function setMode(mode) {
   } else if (mode === 'learning') {
     setStatus('');
   } else if (mode === 'send') {
-    setModeDescription('Tap Space/Enter for . / - . Use Letter/Word Space buttons.');
+    setModeDescription('Tap Space or Enter: short = dot, long = dash. Hit Submit when finished.');
     clearTapBuffer();
   } else if (mode === 'sendquiz') {
     setStatus('Choose difficulty and press Start Quiz');
@@ -1038,17 +1010,7 @@ document.addEventListener('keyup', e => {
   if (e.key === ' ' || e.key === 'Enter') {
     const duration = Date.now() - tapStart;
     const symbol = duration < SHORT_THRESHOLD ? '.' : '-';
-    // Auto spacing based on pause since last symbol
-    if (autoSpaceChk.checked && lastTapEnd && (Date.now() - lastTapEnd > 700)) {
-      const gap = Date.now() - lastTapEnd;
-      if (gap > 1400) {
-        tapBuffer = tapBuffer.trim() + ' / ';
-      } else if (gap > 700) {
-        if (tapBuffer && !tapBuffer.endsWith(' ')) tapBuffer += ' ';
-      }
-    }
     tapBuffer += symbol;
-    lastTapEnd = Date.now();
     sessionSymbols++;
     playTone(duration < SHORT_THRESHOLD ? 80 : 220);
     updateMorseDisplay();
@@ -1060,18 +1022,6 @@ document.addEventListener('keyup', e => {
   }
 });
 
-letterSpaceBtn.addEventListener('click', () => {
-  if (currentMode === 'send' || currentMode === 'sendquiz') {
-    tapBuffer += (tapBuffer && !tapBuffer.endsWith(' ') ? ' ' : '');
-    updateMorseDisplay();
-  }
-});
-wordSpaceBtn.addEventListener('click', () => {
-  if (currentMode === 'send' || currentMode === 'sendquiz') {
-    tapBuffer = tapBuffer.trim() + ' / ';
-    updateMorseDisplay();
-  }
-});
 hintBtn.addEventListener('click', showHint);
 clearSendBtn.addEventListener('click', () => {
   clearTapBuffer();
