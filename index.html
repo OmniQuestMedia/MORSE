@@ -233,6 +233,28 @@
     margin-bottom: 4px;
     display: none;
   }
+
+  #stats {
+    font-size: 0.8rem;
+    color: #888;
+    text-align: center;
+    margin-top: 2px;
+    min-height: 1.1em;
+  }
+  #custom-list {
+    width: 100%;
+    font-size: 13px;
+    padding: 6px 8px;
+    display: none;
+  }
+  #auto-space-label {
+    font-size: 0.85rem;
+    color: #aaa;
+    display: none;
+    align-items: center;
+    gap: 6px;
+  }
+
   #decoded {
     font-size: 0.95rem;
     color: #ccc;
@@ -288,6 +310,9 @@
       <button id="hint-btn" type="button" style="flex:1;min-width:70px;display:none;">Hint</button>
       <button id="clear-send" type="button" style="flex:1;min-width:70px;">Clear</button>
     </div>
+    <label id="auto-space-label"><input type="checkbox" id="auto-space"> Auto spacing (pause detection)</label>
+    <div id="stats"></div>
+    <input type="text" id="custom-list" placeholder="Custom phrases, comma separated (e.g. HELLO, GREEN, MORSE CODE)">
   </div>
 </div>
 
@@ -298,6 +323,7 @@
     <option value="learning">Mode: Receive</option>
     <option value="send">Mode: Send</option>
     <option value="sendquiz">Mode: Send Quiz</option>
+    <option value="copy">Mode: Copy This</option>
   </select>
   <select id="shape">
     <option value="vpill">Vertical pill</option>
@@ -395,6 +421,10 @@ const letterSpaceBtn = document.getElementById('letter-space');
 const wordSpaceBtn = document.getElementById('word-space');
 const hintBtn = document.getElementById('hint-btn');
 const clearSendBtn = document.getElementById('clear-send');
+const autoSpaceChk = document.getElementById('auto-space');
+const autoSpaceLabel = document.getElementById('auto-space-label');
+const statsEl = document.getElementById('stats');
+const customListIn = document.getElementById('custom-list');
 
 let currentColor = '#00e5ff';
 let unit = 110;
@@ -410,6 +440,13 @@ let tapBuffer = '';
 let holdTimer = null;
 let sendTryCount = 0;
 let sendScore = 0;
+let lastTapEnd = 0;
+let sessionSymbols = 0;
+let sessionCorrect = 0;
+let sessionAttempts = 0;
+let sessionStart = Date.now();
+let audioCtx = null;
+let customPhrases = [];
 const SHORT_THRESHOLD = 450;
 
 function setStatus(msg, reveal = false) {
@@ -450,12 +487,14 @@ function resetScore() {
 }
 
 function updateUIForMode(mode) {
-  const isSend = mode === 'send' || mode === 'sendquiz';
+  const isSend = mode === 'send' || mode === 'sendquiz' || mode === 'copy';
   sendControls.style.display = isSend ? 'flex' : 'none';
-  sendDifficulty.style.display = mode === 'sendquiz' ? 'block' : 'none';
-  sendTarget.style.display = mode === 'sendquiz' ? 'block' : 'none';
+  sendDifficulty.style.display = (mode === 'sendquiz' || mode === 'copy') ? 'block' : 'none';
+  sendTarget.style.display = (mode === 'sendquiz' || mode === 'copy') ? 'block' : 'none';
   decodedEl.style.display = isSend ? 'block' : 'none';
-  hintBtn.style.display = mode === 'sendquiz' ? 'block' : 'none';
+  hintBtn.style.display = (mode === 'sendquiz' || mode === 'copy') ? 'block' : 'none';
+  autoSpaceLabel.style.display = isSend ? 'flex' : 'none';
+  customListIn.style.display = (mode === 'sendquiz' || mode === 'copy') ? 'block' : 'none';
   if (mode === 'learning') {
     challengeType.style.display = 'block';
     morseDisplay.style.display = 'block';
@@ -499,6 +538,14 @@ function updateUIForMode(mode) {
     learningPrompt.style.display = 'none';
     playBtn.textContent = currentChallenge ? 'Submit' : 'Start Quiz';
     msgIn.style.display = 'none';
+  } else if (mode === 'copy') {
+    challengeType.style.display = 'none';
+    morseDisplay.style.display = 'block';
+    againBtn.style.display = currentChallenge ? 'block' : 'none';
+    hintEl.style.display = 'none';
+    learningPrompt.style.display = 'none';
+    playBtn.textContent = currentChallenge ? 'Submit Copy' : 'Start Copy';
+    msgIn.style.display = 'none';
   } else {
     challengeType.style.display = 'none';
     morseDisplay.style.display = 'none';
@@ -514,9 +561,17 @@ function updateUIForMode(mode) {
 function updateMorseDisplay(preview = '') {
   const full = (tapBuffer || '') + preview;
   morseDisplay.textContent = full;
-  if (currentMode === 'send' || currentMode === 'sendquiz') {
+  if (currentMode === 'send' || currentMode === 'sendquiz' || currentMode === 'copy') {
     decodedEl.textContent = decodeMorse(full) || '(decoded)';
   }
+  updateStats();
+}
+
+function updateStats() {
+  const elapsedMin = Math.max(0.01, (Date.now() - sessionStart) / 60000);
+  const wpm = sessionSymbols > 0 ? Math.round((sessionSymbols / 5) / elapsedMin) : 0;
+  const acc = sessionAttempts > 0 ? Math.round((sessionCorrect / sessionAttempts) * 100) : 0;
+  statsEl.textContent = sessionAttempts || sessionSymbols ? `WPM ~${wpm} · Accuracy ${acc}%` : '';
 }
 
 function clearTapBuffer() {
@@ -612,6 +667,27 @@ panelToggle.addEventListener('click', () => {
 });
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function ensureAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function playTone(durationMs, freq = 600) {
+  try {
+    ensureAudio();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + durationMs / 1000);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + durationMs / 1000);
+  } catch (e) {}
+}
 
 async function flashChar(ch) {
   const code = MORSE[ch.toUpperCase()] || '';
@@ -759,7 +835,15 @@ async function checkGuess() {
   setTimeout(() => setStatus('Press Ready For Next Guess'), 2500);
 }
 
+function getCustomList() {
+  const raw = customListIn.value.trim();
+  if (!raw) return [];
+  return raw.split(',').map(s => s.trim().toUpperCase()).filter(s => s.length > 0 && s.length <= 40);
+}
+
 function pickSendChallenge() {
+  const customs = getCustomList();
+  if (customs.length) return customs[Math.floor(Math.random()*customs.length)];
   const diff = sendDifficulty.value;
   if (diff === 'learner') return WORDS5[Math.floor(Math.random()*WORDS5.length)];
   if (diff === 'beginner') return WORDS8[Math.floor(Math.random()*WORDS8.length)];
@@ -767,7 +851,19 @@ function pickSendChallenge() {
   return EXPERT_PHRASES[Math.floor(Math.random()*EXPERT_PHRASES.length)];
 }
 
-async function startSendQuiz() {
+async async function startCopyChallenge() {
+  currentChallenge = pickSendChallenge();
+  sendTryCount = 0;
+  clearTapBuffer();
+  sendTarget.textContent = currentChallenge;
+  setStatus('Watch the flash, then send it back...');
+  updateUIForMode('copy');
+  // Flash it first
+  await flashWord(currentChallenge.replace(/ /g, '')); // simple flash
+  setStatus('Now send it back. Tap then Submit Copy.');
+}
+
+function startSendQuiz() {
   currentChallenge = pickSendChallenge();
   sendTryCount = 0;
   clearTapBuffer();
@@ -782,6 +878,8 @@ function checkSendQuiz() {
   const user = tapBuffer.trim().replace(/\s+/g, ' ');
   const correct = user === expected;
   sendTryCount++;
+  sessionAttempts++;
+  if (correct) sessionCorrect++;
   if (correct) {
     const pts = Math.max(1, 4 - sendTryCount);
     sendScore += pts;
@@ -817,6 +915,11 @@ function setMode(mode) {
   flashCount = 0;
   clearTapBuffer();
   setStatus('');
+  sessionSymbols = 0;
+  sessionCorrect = 0;
+  sessionAttempts = 0;
+  sessionStart = Date.now();
+  updateStats();
   updateUIForMode(mode);
   if (mode === 'idle') {
     startIdle();
@@ -830,6 +933,10 @@ function setMode(mode) {
     clearTapBuffer();
   } else if (mode === 'sendquiz') {
     setStatus('Choose difficulty and press Start Quiz');
+    sendTarget.textContent = '';
+    clearTapBuffer();
+  } else if (mode === 'copy') {
+    setStatus('Press Start Copy to flash then send back');
     sendTarget.textContent = '';
     clearTapBuffer();
   }
@@ -862,6 +969,9 @@ playBtn.addEventListener('click', () => {
   } else if (currentMode === 'sendquiz') {
     if (currentChallenge) checkSendQuiz();
     else startSendQuiz();
+  } else if (currentMode === 'copy') {
+    if (currentChallenge) checkSendQuiz();
+    else startCopyChallenge();
   }
 });
 
@@ -895,7 +1005,19 @@ document.addEventListener('keyup', e => {
   if (e.key === ' ' || e.key === 'Enter') {
     const duration = Date.now() - tapStart;
     const symbol = duration < SHORT_THRESHOLD ? '.' : '-';
+    // Auto spacing based on pause since last symbol
+    if (autoSpaceChk.checked && lastTapEnd && (Date.now() - lastTapEnd > 700)) {
+      const gap = Date.now() - lastTapEnd;
+      if (gap > 1400) {
+        tapBuffer = tapBuffer.trim() + ' / ';
+      } else if (gap > 700) {
+        if (tapBuffer && !tapBuffer.endsWith(' ')) tapBuffer += ' ';
+      }
+    }
     tapBuffer += symbol;
+    lastTapEnd = Date.now();
+    sessionSymbols++;
+    playTone(duration < SHORT_THRESHOLD ? 80 : 220);
     updateMorseDisplay();
     tapStart = 0;
     if (holdTimer) {
