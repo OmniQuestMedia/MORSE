@@ -28,7 +28,7 @@
   }
   #tagline {
     text-align: center;
-    margin-bottom: 16px;
+    margin-bottom: 32px;
   }
   #tagline .top {
     font-size: 1.1rem;
@@ -195,10 +195,10 @@
     overflow-wrap: break-word;
   }
   #status {
-    margin-top: 8px;
+    margin-top: 4px;
     font-size: 0.9rem;
     color: #aaa;
-    min-height: 1.2em;
+    min-height: 0.4em;
     text-align: center;
   }
   #status.reveal {
@@ -208,7 +208,7 @@
   #score {
     font-size: 0.85rem;
     color: #888;
-    margin-top: 4px;
+    margin-top: 2px;
   }
 </style>
 </head>
@@ -318,6 +318,7 @@ const modeSel = document.getElementById('mode');
 const statusEl = document.getElementById('status');
 const scoreEl = document.getElementById('score');
 const challengeType = document.getElementById('challenge-type');
+const hintEl = document.getElementById('hint');
 
 let currentColor = '#00e5ff';
 let unit = 110;
@@ -362,6 +363,7 @@ function updateUIForMode(mode) {
   if (mode === 'learning') {
     challengeType.style.display = 'block';
     morseDisplay.style.display = 'block';
+    hintEl.style.display = 'none';
     playBtn.textContent = currentChallenge ? 'Submit Guess' : 'Ready';
     againBtn.style.display = currentChallenge ? 'block' : 'none';
     msgIn.placeholder = "What's your guess? (or tap Space/Enter)";
@@ -370,18 +372,21 @@ function updateUIForMode(mode) {
     challengeType.style.display = 'none';
     morseDisplay.style.display = 'none';
     againBtn.style.display = 'none';
+    hintEl.style.display = 'block';
     playBtn.textContent = 'Display Loop';
     msgIn.placeholder = 'Type a phrase (max 40)';
   } else if (mode === 'oneshot') {
     challengeType.style.display = 'none';
     morseDisplay.style.display = 'none';
     againBtn.style.display = 'none';
+    hintEl.style.display = 'block';
     playBtn.textContent = 'Display Code';
     msgIn.placeholder = 'Type a phrase (max 40)';
   } else {
     challengeType.style.display = 'none';
     morseDisplay.style.display = 'none';
     againBtn.style.display = 'none';
+    hintEl.style.display = 'block';
     playBtn.textContent = 'Play / Flash';
     msgIn.placeholder = 'Type a phrase (max 40)';
   }
@@ -643,7 +648,7 @@ function setMode(mode) {
   updateUIForMode(mode);
   if (mode === 'idle') {
     startIdle();
-    setStatus('Display Loop running');
+    setStatus('Display Loop Running');
   } else if (mode === 'oneshot') {
     setStatus('One-shot: type a phrase and press Display Code');
   } else if (mode === 'learning') {
